@@ -98,18 +98,70 @@ def try_model(updates):
 
 # Literature says feed-forward autoencoder
 # works for images of 28x28 with neurons 784->32->32->784
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'img_size'          : 28,
+#     'n_enc'             : 500,
+#     'n_latent'          : 32,
+#     'n_dec'             : 500,
+#     'run_number'        : 1,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 10000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 600001,
+# }
+# try_model(updates)
+
+# Shitty normalizing version with 128 x 128 on literature model
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'use_literature_code' : True,
+#     'img_size'          : 128,
+#     'n_enc'             : 500,
+#     'n_latent'          : 32,
+#     'n_dec'             : 500,
+#     'run_number'        : 2,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 10000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 600001,
+# }
+# try_model(updates)
+
+# Shitty normalizing version on 5 LAYERs our model
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 500,
+#     'n_link'            : 100,
+#     'n_latent'          : 75,
+#     'n_dec'             : 500,
+#     'run_number'        : 3,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 10000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 600001,
+# }
+# try_model(updates)
+
+# GOOD normalization, literature code
 updates = {
     'task'              : 'bw_to_bw_simple',
     'save_dir'          : './savedir/bw_to_bw_simple/',
-    'img_size'          : 28,
+    'normalize'         : True,
+    'use_literature_code' : True,
+    'img_size'          : 128,
     'n_enc'             : 500,
     'n_latent'          : 32,
     'n_dec'             : 500,
-    'run_number'        : 1,
+    'run_number'        : 4,
     'print_iter'        : 1000,
+    'save_iter'         : 1000,
     'batch_train_size'  : 100,
-    'num_iterations'    : 30001,
+    'num_iterations'    : 600001,
 }
 try_model(updates)
-
-

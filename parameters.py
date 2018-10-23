@@ -14,6 +14,7 @@ par = {
 
 	# Network shape
 	'n_enc'				: 125,
+	'n_link'			: 100,
 	'n_latent'			: 75,
 	'n_dec'				: 125,
 	
@@ -55,13 +56,19 @@ def update_dependencies():
 	c = 0.1
 	par['W_in_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_input'], par['n_enc']]))
 	
-	par['W_enc_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_enc'], par['n_latent']]))
-	par['b_latent_init'] = np.zeros((1,par['n_latent']), dtype = np.float32)
-	
-	par['W_dec_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_latent'], par['n_dec']]))
-	par['b_dec_init'] = np.zeros((1,par['n_dec']), dtype = np.float32)
+	par['W_enc_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_enc'], par['n_link']]))
+	par['b_latent_init'] = np.zeros((1,par['n_link']), dtype = np.float32)
 
-	par['W_out_init'] = np.float32(np.random.uniform(-c, c, size = [par['n_latent'], par['n_output']]))
+	par['W_link_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_link'], par['n_latent']]))
+	par['b_link_init'] = np.zeros((1,par['n_latent']), dtype = np.float32)
+	
+	par['W_dec_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_latent'], par['n_link']]))
+	par['b_dec_init'] = np.zeros((1,par['n_link']), dtype = np.float32)
+
+	par['W_link2_init'] = c*np.float32(np.random.gamma(shape=0.25, scale=1.0, size = [par['n_link'], par['n_dec']]))
+	par['b_link2_init'] = np.zeros((1,par['n_dec']), dtype = np.float32)
+
+	par['W_out_init'] = np.float32(np.random.uniform(-c, c, size = [par['n_dec'], par['n_output']]))
 	par['b_out_init'] = np.zeros((1,par['n_output']), dtype = np.float32)
 
 """

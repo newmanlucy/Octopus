@@ -36,6 +36,9 @@ class Stimulus:
 		self.training_data = np.array([img.reshape(par['n_input']) for img in training_imgs_small])
 		self.testing_data = np.array([img.reshape(par['n_input']) for img in testing_imgs_small])
 
+		vis = self.training_data[0].reshape(par['img_shape'])
+		cv2.imwrite('./debug.png', vis)
+
 
 	def generate_train_batch(self):
 
@@ -54,3 +57,7 @@ class Stimulus:
 		target_data = self.testing_data[idx]
 
 		return input_data, target_data
+
+if __name__ == "__main__":
+	stim = Stimulus()
+	stim.generate_train_batch()
