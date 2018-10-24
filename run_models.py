@@ -296,21 +296,21 @@ def try_model(updates):
 # Shitty normalizing version with 128 x 128 on literature model
 # More neurons (200, instead of 138)
 updates = {
-    'task'              : 'bw_to_bw',
-    'save_dir'          : './savedir/bw_to_bw/',
-    'num_layers'        : 2,
+    'task'              : 'bw_to_bw_simple',
+    'save_dir'          : './savedir/bw_to_bw_simple/',
+    'num_layers'        : 3,
     'img_size'          : 128,
     'n_enc'             : 200, # try 200 next
+    'n_latent'          : 138,
     'n_dec'             : 200,
     'learning_rate'     : 0.1,
-    'run_number'        : 0,
+    'run_number'        : 10,
     'print_iter'        : 100,
     'save_iter'         : 10000,
     'batch_train_size'  : 100,
     'num_iterations'    : 600001,
-    # 'n_latent'          : 32,
 }
 try_model(updates)
 
-
+# Been using 138 and 200 neurons for 2 layer
 

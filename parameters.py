@@ -56,36 +56,36 @@ def update_dependencies():
 
     # Set up initializers
     if par['num_layers'] == 5:
-        par['W_in_init'] = np.random.normal(size=[par['n_input'], par['n_enc']])
-        par['b_enc_init'] = np.random.normal(size=(1,par['n_enc']))
+        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
+        par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
 
-        par['W_enc_init'] = np.random.normal(size=[par['n_enc'], par['n_link']])
-        par['b_latent_init'] = np.random.normal((1,par['n_link']))
+        par['W_enc_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_link']]))
+        par['b_latent_init'] = np.float32(np.random.normal(size=(1,par['n_link'])))
 
-        par['W_link_init'] = np.random.normal(size=[par['n_link'], par['n_latent']])
-        par['b_link_init'] = np.random.normal((1,par['n_latent']))
+        par['W_link_init'] = np.float32(np.random.normal(size=[par['n_link'], par['n_latent']]))
+        par['b_link_init'] = np.float32(np.random.normal(size=(1,par['n_latent'])))
         
-        par['W_dec_init'] = np.random.normal(size = [par['n_latent'], par['n_link']])
-        par['b_dec_init'] = np.random.normal((1,par['n_link']))
+        par['W_dec_init'] = np.float32(np.random.normal(size = [par['n_latent'], par['n_link']]))
+        par['b_dec_init'] = np.float32(np.random.normal(size=(1,par['n_link'])))
 
-        par['W_link2_init'] = np.random.normal(size=[par['n_link'], par['n_dec']])
-        par['b_link2_init'] = np.random.normal((1,par['n_dec']))
+        par['W_link2_init'] = np.float32(np.random.normal(size=[par['n_link'], par['n_dec']]))
+        par['b_link2_init'] = np.float32(np.random.normal(size=(1,par['n_dec'])))
 
-        par['W_out_init'] = np.random.normal(size=[par['n_dec'], par['n_output']])
-        par['b_out_init'] = np.random.normal((1,par['n_output']))
+        par['W_out_init'] = np.float32(np.random.normal(size=[par['n_dec'], par['n_output']]))
+        par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
     
     elif par['num_layers'] == 3:
-        par['W_in_init'] = np.random.normal(size=[par['n_input'], par['n_enc']])
-        par['b_enc_init'] = np.random.normal(size=(1,par['n_enc']))
+        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
+        par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
 
-        par['W_enc_init'] = np.random.normal(size=[par['n_enc'], par['n_latent']])
-        par['b_latent_init'] = np.random.normal((1,par['n_latent']))
+        par['W_enc_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_latent']]))
+        par['b_latent_init'] = np.float32(np.random.normal(size=(1,par['n_latent'])))
         
-        par['W_dec_init'] = np.random.normal(size=[par['n_latent'], par['n_dec']])
-        par['b_dec_init'] = np.random.normal((1,par['n_dec']))
+        par['W_dec_init'] = np.float32(np.random.normal(size=[par['n_latent'], par['n_dec']]))
+        par['b_dec_init'] = np.float32(np.random.normal(size=(1,par['n_dec'])))
 
-        par['W_out_init'] = np.random.normal(size=[par['n_dec'], par['n_output']])
-        par['b_out_init'] = np.random.normal((1,par['n_output']))
+        par['W_out_init'] = np.float32(np.random.normal(size=[par['n_dec'], par['n_output']]))
+        par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
     
     elif par['num_layers'] == 2:
         par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
