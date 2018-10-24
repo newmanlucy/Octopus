@@ -35,10 +35,16 @@ class Stimulus:
         testing_imgs_small = [cv2.resize(img, par['img_shape'][0:2]) for img in testing_imgs]
         
         # Reshape the images to input dimensions
-        self.training_data = np.array([img.reshape(par['n_input']) for img in training_imgs_small])
-        self.testing_data = np.array([img.reshape(par['n_input']) for img in testing_imgs_small])
+        self.training_data = np.array([np.array(img).reshape(par['n_input']) for img in training_imgs_small])
+        self.testing_data = np.array([np.array(img).reshape(par['n_input']) for img in testing_imgs_small])
+
+        if par['normalize01']:
+            self.training_data = self.training_data/255
+            self.testing_data = self.testing_data/255
 
         vis = self.training_data[0].reshape(par['img_shape'])
+        if par['normalize01']:
+            vis *= 255
         cv2.imwrite('./debug.png', vis)
 
 

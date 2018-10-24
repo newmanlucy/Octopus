@@ -141,7 +141,8 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Iter: {:8} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format(i, train_loss, time.time()-start))
+                print('Model {:2} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], i, train_loss, time.time()-start))
                 losses.append(train_loss)
 
                 # Save one training and output img from this iteration
@@ -158,6 +159,9 @@ def main(gpu_id = None):
                     vis3 = np.concatenate((original3, output3), axis=1)
                     vis = np.concatenate((vis1, vis2), axis=0)
                     vis = np.concatenate((vis, vis3), axis=0)
+                    if par['normalize01']:
+                        vis *= 255
+
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
                     weights = eval_weights()
