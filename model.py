@@ -9,9 +9,8 @@ import pickle
 import time
 import numpy as numpy
 from stimulus import Stimulus
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from parameters import *
 
 # Ignore tensorflow warning
