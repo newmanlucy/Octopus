@@ -1,6 +1,7 @@
 import json
 import time
 import model
+import sys
 import io
 from parameters import *
 try:
@@ -295,7 +296,7 @@ def try_model(updates):
 # Shitty normalizing version with 128 x 128 on literature model
 # More neurons (200, instead of 138)
 updates = {
-    'task'              : 'bw_to_bw_simple',
+    'task'              : 'bw_to_bw',
     'save_dir'          : './savedir/bw_to_bw/',
     'num_layers'        : 2,
     'img_size'          : 128,

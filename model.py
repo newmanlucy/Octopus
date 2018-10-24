@@ -11,6 +11,9 @@ from stimulus import Stimulus
 import matplotlib.pyplot as plt
 from parameters import *
 
+# Ignore tensorflow warning
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+
 class Model:
 
     def __init__(self, input_data, target_data):
