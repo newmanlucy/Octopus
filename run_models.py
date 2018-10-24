@@ -305,7 +305,7 @@ updates = {
     'n_dec'             : 200,
     'learning_rate'     : 0.1,
     'run_number'        : 10,
-    'print_iter'        : 100,
+    'print_iter'        : 1000,
     'save_iter'         : 10000,
     'batch_train_size'  : 100,
     'num_iterations'    : 600001,
