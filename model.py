@@ -113,7 +113,7 @@ def main(gpu_id = None):
     # Model stats
     losses = []
 
-    confit = tf.ConfigProto()
+    config = tf.ConfigProto()
     with tf.Session(config=config) as sess:
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
