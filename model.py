@@ -5,6 +5,7 @@ Contributions from Rick Stevens
 
 import tensorflow as tf
 import cv2
+import pickle
 import time
 import numpy as numpy
 from stimulus import Stimulus
@@ -158,6 +159,11 @@ def main(gpu_id = None):
                     vis = np.concatenate((vis, vis3), axis=0)
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
+                    weights = eval_weights()
+                    pickle.dump({'weights': weights, 'losses': losses}, \
+                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+
+
                 # Plot loss curve
                 if i > 0:
                     plt.plot(losses[1:])
@@ -166,6 +172,30 @@ def main(gpu_id = None):
                 # Stop training if loss is small enough (just for sweep purposes)
                 # if train_loss < 100:
                     # break
+
+def eval_weights():
+
+    with tf.variable_scope('encoder', reuse=True):
+        W_in = tf.get_variable('W_in')
+        b_enc = tf.get_variable('b_enc')
+
+    with tf.variable_scope('decoder', reuse=True):
+        W_dec = tf.get_variable('W_dec')
+        b_dec = tf.get_variable('b_dec')
+        W_out = tf.get_variable('W_out')
+        b_out = tf.get_variable('b_out')
+
+    weights = {
+        'W_in'  : W_in.eval(),
+        'W_dec' : W_dec.eval(),
+        'W_out' : W_out.eval(),
+        'b_enc' : b_enc.eval(),
+        'b_dec' : b_dec.eval(),
+        'b_out' : b_out.eval(),
+    }
+
+    return weights
+
 
 if __name__ == "__main__":
     main()

@@ -19,6 +19,8 @@ class Stimulus:
         testing_files = [os.path.join(par['img_dir'], f) for f in files[idx:]]
 
         # Load up images from the files
+        # 'bw_to_bw': going from three channel bw image to three channel bw image
+        # 'bw_to_bw_simple': going from one channel bw image to one channel bw image
         if par['task'] == 'bw_to_bw':
             training_imgs = [cv2.imread(f) for f in training_files]
             testing_imgs = [cv2.imread(f) for f in testing_files]
