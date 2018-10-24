@@ -148,20 +148,162 @@ def try_model(updates):
 # }
 # try_model(updates)
 
-# GOOD normalization, literature code
+# # GOOD normalization, literature code
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : True,
+#     'new_model'         : False,
+#     'use_literature_code' : True,
+#     'img_size'          : 128,
+#     'n_enc'             : 500,
+#     'n_latent'          : 32,
+#     'n_dec'             : 500,
+#     'run_number'        : 4,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 1000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 600001,
+# }
+# try_model(updates)
+
+# # Shitty normalizing version with 128 x 128 on literature model
+# # with doubled the size of the  latent layer
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'use_literature_code' : True,
+#     'new_model'         : False,
+#     'normalize'         : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 500,
+#     'n_latent'          : 64,
+#     'n_dec'             : 500,
+#     'run_number'        : 5,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# New model; no normalization
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : False,
+#     'new_model'         : True,
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 256,
+#     'n_link'            : 100,
+#     'n_latent'          : 32,
+#     'n_dec'             : 256,
+#     'run_number'        : 8,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# Not normalized; Slightly smaller encoder, bigger latent space
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : False,
+#     'new_model'         : True,
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 256,
+#     'n_link'            : 175,
+#     'n_latent'          : 145,
+#     'n_dec'             : 256,
+#     'run_number'        : 6,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : False,
+#     'new_model'         : False,
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 256,
+#     'n_link'            : 175,
+#     'n_latent'          : 145,
+#     'n_dec'             : 256,
+#     'run_number'        : 8,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# 3 LAYERS debugged...
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : False,
+#     'new_model'         : False,
+#     'num_layers'        : 3,
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 500,
+#     'n_latent'          : 145,
+#     'n_dec'             : 500,
+#     'run_number'        : 9,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# 3 LAYERS debugged...
+# updates = {
+#     'task'              : 'bw_to_bw_simple',
+#     'save_dir'          : './savedir/bw_to_bw_simple/',
+#     'normalize'         : False,
+#     'new_model'         : False,
+#     'num_layers'        : 3,
+#     'use_literature_code' : False,
+#     'img_size'          : 128,
+#     'n_enc'             : 750,
+#     'n_latent'          : 200,
+#     'n_dec'             : 750,
+#     'run_number'        : 9,
+#     'print_iter'        : 1000,
+#     'save_iter'         : 5000,
+#     'batch_train_size'  : 100,
+#     'num_iterations'    : 150001,
+# }
+# try_model(updates)
+
+# Shitty normalizing version with 128 x 128 on literature model
+# More neurons (200, instead of 138)
 updates = {
     'task'              : 'bw_to_bw_simple',
-    'save_dir'          : './savedir/bw_to_bw_simple/',
-    'normalize'         : True,
-    'use_literature_code' : True,
+    'save_dir'          : './savedir/bw_to_bw/',
+    'num_layers'        : 2,
     'img_size'          : 128,
-    'n_enc'             : 500,
-    'n_latent'          : 32,
-    'n_dec'             : 500,
-    'run_number'        : 4,
-    'print_iter'        : 1000,
-    'save_iter'         : 1000,
+    'n_enc'             : 200, # try 200 next
+    'n_dec'             : 200,
+    'learning_rate'     : 0.1,
+    'run_number'        : 0,
+    'print_iter'        : 100,
+    'save_iter'         : 10000,
     'batch_train_size'  : 100,
     'num_iterations'    : 600001,
+    # 'n_latent'          : 32,
 }
 try_model(updates)
+
+
+

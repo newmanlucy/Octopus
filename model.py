@@ -88,35 +88,6 @@ class Model:
             self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_dec), self.b_dec))
             self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
 
-        # # LITERATURE STUFF
-        # if par['use_literature_code']:
-        #     n_nodes_inpl = 128*128
-        #     n_nodes_hl1 = par['n_hidden']
-        #     n_nodes_hl2 = par['n_hidden']
-        #     n_nodes_outl = 128*128
-
-        #     hidden_1_layer_vals = {
-        #       'weights':tf.Variable(tf.random_normal([n_nodes_inpl,n_nodes_hl1])),
-        #       'biases':tf.Variable(tf.random_normal([n_nodes_hl1]))  }
-                
-        #     # second hidden layer has 32*32 weights and 32 biases
-        #     hidden_2_layer_vals = {
-        #       'weights':tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
-        #       'biases':tf.Variable(tf.random_normal([n_nodes_hl2]))  }
-        
-        #     # second hidden layer has 32*784 weights and 784 biases
-        #     output_layer_vals = {
-        #       'weights':tf.Variable(tf.random_normal([n_nodes_hl2,n_nodes_outl])),
-        #         'biases':tf.Variable(tf.random_normal([n_nodes_outl])) }
-
-            
-        #     layer1 = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, hidden_1_layer_vals['weights']), hidden_1_layer_vals['biases']))
-        #     layer2 = tf.nn.sigmoid(tf.add(tf.matmul(layer1, hidden_2_layer_vals['weights']), hidden_2_layer_vals['biases']))
-        #     if par['normalize']:
-        #         output_layer = tf.matmul(layer2, output_layer_vals['weights']) + output_layer_vals['biases']
-        #     else:
-        #         output_layer = tf.nn.relu(tf.add(tf.matmul(layer2, output_layer_vals['weights']), output_layer_vals['biases']))
-        #     self.output = output_layer
 
     def optimize(self):
         # Calculae loss
