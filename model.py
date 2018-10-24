@@ -95,7 +95,10 @@ class Model:
         self.train_op = tf.train.AdagradOptimizer(par['learning_rate']).minimize(self.loss)
 
 
-def main():
+def main(gpu_id = None):
+
+    if gpu_id is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
     # Reset Tensorflow graph
     tf.reset_default_graph()
@@ -110,9 +113,13 @@ def main():
     # Model stats
     losses = []
 
-    with tf.Session() as sess:
+    confit = tf.ConfigProto()
+    with tf.Session(config=config) as sess:
 
-        model = Model(x,y)
+        device = '/cpu:0' if gpu_id is None else '/gpu:0'
+        with tf.device(device):
+            model = Model(x,y)
+        
         init = tf.global_variables_initializer()
         sess.run(init)
 

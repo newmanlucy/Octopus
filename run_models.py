@@ -10,6 +10,12 @@ except NameError:
 
 def try_model(updates):
 
+    # GPU
+    try:
+        gpu_id = sys.argv[1]
+    except:
+        gpu_id = None
+
     # Update parameters for this run
     print('Setting up model!')
     update_parameters(updates)
@@ -25,7 +31,7 @@ def try_model(updates):
     t0 = time.time()
     try:
         print('Model number ' + str(par['run_number']) + ' running!')
-        model.main()
+        model.main(gpu_id)
         print('Model run concluded.  Run time: {:5.3f} s.\n\n'.format(time.time()-t0))
     except KeyboardInterrupt:
         quit('Quit by KeyboardInterrupt.  Run time: {:5.3f} s.\n\n'.format(time.time()-t0))
