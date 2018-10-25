@@ -150,7 +150,7 @@ def main(gpu_id = None):
                     # Generate batch from testing set and check the output
                     input_data, target_data = stim.generate_test_batch()
                     feed_dict = {x: input_data, y: target_data}
-                    model_output = sess.run([model.output], feed_dict=feed_dict)
+                    model_output = sess.run(model.output, feed_dict=feed_dict)
 
                     input1 = input_data[0].reshape(par['inp_img_shape'])
                     original1 = target_data[0].reshape(par['out_img_shape'])

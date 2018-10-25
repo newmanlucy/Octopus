@@ -63,8 +63,8 @@ def update_dependencies():
         par['save_dir'] = './savedir/bw_to_bw_simple/'
 
     elif par['task'] == 'bw3_to_color':
-        par['input_dir'] = './bw_im'
-        par['target_dir'] = './raw_im'
+        par['input_dir'] = './bw_im/'
+        par['target_dir'] = './raw_im/'
         par['inp_img_shape'] = (par['img_size'],par['img_size'],3)
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']*3
@@ -72,8 +72,8 @@ def update_dependencies():
         par['save_dir'] = './savedir/bw3_to_color/'
 
     elif par['task'] == 'bw1_to_color':
-        par['input_dir'] = './bw_im'
-        par['target_dir'] = './raw_im'
+        par['input_dir'] = './bw_im/'
+        par['target_dir'] = './raw_im/'
         par['inp_img_shape'] = (par['img_size'],par['img_size'])
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']
