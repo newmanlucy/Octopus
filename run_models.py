@@ -295,29 +295,29 @@ def try_model(updates):
 
 # Shitty normalizing version with 128 x 128 on literature model
 # More neurons (200, instead of 138)
-updates = {
-    'a_note'            : 'testing 0~1 norm input on 3 channels; same setup as run 10',
-    'n_dec'             : 200,
-    'n_enc'             : 200,
-    'n_latent'          : 138,
-    'normalize01'       : True,
-    'num_layers'        : 3,
-    'run_number'        : 2,
-    'task'              : 'bw_to_bw'
-}
-try_model(updates)
+# updates = {
+#     'a_note'            : 'testing 0~1 norm input on 3 channels; same setup as run 10',
+#     'n_dec'             : 200,
+#     'n_enc'             : 200,
+#     'n_latent'          : 138,
+#     'normalize01'       : True,
+#     'num_layers'        : 3,
+#     'run_number'        : 2,
+#     'task'              : 'bw_to_bw'
+# }
+# try_model(updates)
 
-updates = {
-    'a_note'            : 'testing 0~1 norm input on 3 channels; 2 layers',
-    'n_dec'             : 200,
-    'n_enc'             : 200,
-    'n_latent'          : 138,
-    'normalize01'       : True,
-    'num_layers'        : 3,
-    'run_number'        : 3,
-    'task'              : 'bw_to_bw'
-}
-try_model(updates)
+# updates = {
+#     'a_note'            : 'testing 0~1 norm input on 3 channels; 2 layers',
+#     'n_dec'             : 200,
+#     'n_enc'             : 200,
+#     'n_latent'          : 138,
+#     'normalize01'       : True,
+#     'num_layers'        : 3,
+#     'run_number'        : 3,
+#     'task'              : 'bw_to_bw'
+# }
+# try_model(updates)
 
 updates = {
     'a_note'            : 'testing colorization without norm; 3 layers',
@@ -339,6 +339,18 @@ updates = {
     'normalize01'       : False,
     'num_layers'        : 2,
     'run_number'        : 1,
+    'task'              : 'bw3_to_color'
+}
+try_model(updates)
+
+updates = {
+    'a_note'            : 'testing colorization without norm; 3 layers',
+    'n_dec'             : 350,
+    'n_enc'             : 350,
+    'n_latent'          : 200,
+    'normalize01'       : False,
+    'num_layers'        : 3,
+    'run_number'        : 0,
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
