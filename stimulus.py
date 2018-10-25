@@ -15,13 +15,13 @@ class Stimulus:
 
         # Separate Training and Testing Data
         idx = round(len(files)*0.8)
-        training_files = [os.path.join(par['img_dir'], f) for f in files[:idx]]
-        testing_files = [os.path.join(par['img_dir'], f) for f in files[idx:]]
+        training_files = [os.path.join(par['train_dir'], f) for f in files[:idx]]
+        testing_files = [os.path.join(par['test_dir'], f) for f in files[idx:]]
 
         # Load up images from the files
         # 'bw_to_bw': going from three channel bw image to three channel bw image
         # 'bw_to_bw_simple': going from one channel bw image to one channel bw image
-        if par['task'] == 'bw_to_bw':
+        if par['task'] == 'bw_to_bw' or par['task'] == 'bw3_to_color':
             training_imgs = [cv2.imread(f) for f in training_files]
             testing_imgs = [cv2.imread(f) for f in testing_files]
         elif par['task'] == 'bw_to_bw_simple':
