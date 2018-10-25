@@ -11,7 +11,7 @@ par = {
     'save_dir'          : './savedir/',
     'train_dir'         : './bw_im/',
     'test_dir'          : './raw_im/',
-    'img_size'          : 32,
+    'img_size'          : 128,
 
     # Network shape
     'n_enc'             : 125,
@@ -23,7 +23,7 @@ par = {
     
     # Training
     'task'              : 'bw_to_bw_simple',
-    'learning_rate'     : 5e-2,
+    'learning_rate'     : 0.1,
     'connection_prob'   : 1,
 
     # Variance
@@ -32,9 +32,10 @@ par = {
     'noise_rnn_sd'      : 0.5,
 
     # Training setup
-    'batch_train_size'  : 256,
-    'num_iterations'    : 50001,
-    'print_iter'        : 100,
+    'batch_train_size'  : 100,
+    'num_iterations'    : 600001,
+    'print_iter'        : 1000,
+    'save_iter'         : 10000
 }
 
 """

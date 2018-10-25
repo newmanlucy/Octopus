@@ -165,7 +165,7 @@ def main(gpu_id = None):
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
                     weights = eval_weights()
-                    pickle.dump({'weights': weights, 'losses': losses}, \
+                    pickle.dump({'weights': weights, 'losses': losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
 
 

@@ -297,76 +297,52 @@ def try_model(updates):
 # More neurons (200, instead of 138)
 updates = {
     'a_note'            : 'testing 0~1 norm input on 3 channels; same setup as run 10',
-    'batch_train_size'  : 100,
-    'img_size'          : 128,
-    'learning_rate'     : 0.1,
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
     'normalize01'       : True,
-    'num_iterations'    : 600001,
     'num_layers'        : 3,
-    'print_iter'        : 1000,
-    'run_number'        : 11,
+    'run_number'        : 2,
     'save_dir'          : './savedir/bw_to_bw/',
-    'save_iter'         : 10000,
     'task'              : 'bw_to_bw'
 }
 try_model(updates)
 
 updates = {
     'a_note'            : 'testing 0~1 norm input on 3 channels; 2 layers',
-    'batch_train_size'  : 100,
-    'img_size'          : 128,
-    'learning_rate'     : 0.1,
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
     'normalize01'       : True,
-    'num_iterations'    : 600001,
     'num_layers'        : 3,
-    'print_iter'        : 1000,
-    'run_number'        : 11,
+    'run_number'        : 3,
     'save_dir'          : './savedir/bw_to_bw/',
-    'save_iter'         : 10000,
     'task'              : 'bw_to_bw'
 }
 try_model(updates)
 
 updates = {
     'a_note'            : 'testing colorization without norm; 3 layers',
-    'batch_train_size'  : 100,
-    'img_size'          : 128,
-    'learning_rate'     : 0.1,
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
     'normalize01'       : False,
-    'num_iterations'    : 600001,
     'num_layers'        : 3,
-    'print_iter'        : 1000,
-    'run_number'        : 11,
+    'run_number'        : 0,
     'save_dir'          : './savedir/bw3_to_color/',
-    'save_iter'         : 10000,
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
 
 updates = {
     'a_note'            : 'testing colorization without norm; 2 layers',
-    'batch_train_size'  : 100,
-    'img_size'          : 128,
-    'learning_rate'     : 0.1,
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
     'normalize01'       : False,
-    'num_iterations'    : 600001,
     'num_layers'        : 2,
-    'print_iter'        : 1000,
-    'run_number'        : 11,
+    'run_number'        : 1,
     'save_dir'          : './savedir/bw3_to_color/',
-    'save_iter'         : 10000,
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
