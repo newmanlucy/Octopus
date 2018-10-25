@@ -50,7 +50,7 @@ def update_dependencies():
         par['img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']*3
         par['n_output'] = par['n_input']
-        par['save_dir'] = './savedir/bw_to_bw'
+        par['save_dir'] = './savedir/bw_to_bw/'
 
     elif par['task'] == 'bw_to_bw_simple':
         par['input_dir'] = './bw_im'
@@ -58,7 +58,7 @@ def update_dependencies():
         par['img_shape'] = (par['img_size'],par['img_size'])
         par['n_input'] = par['img_size']*par['img_size']
         par['n_output'] = par['n_input']
-        par['save_dir'] = './savedir/bw_to_bw_simple'
+        par['save_dir'] = './savedir/bw_to_bw_simple/'
 
     elif par['task'] == 'bw3_to_color':
         par['input_dir'] = './bw_im'
@@ -66,7 +66,7 @@ def update_dependencies():
         par['img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']*3
         par['n_output'] = par['n_input']
-        par['save_dir'] = './savedir/bw3_to_color'
+        par['save_dir'] = './savedir/bw3_to_color/'
 
     # Set up initializers
     if par['num_layers'] == 5:
