@@ -147,11 +147,11 @@ def main(gpu_id = None):
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
-                    original1 = input_data[0].reshape(par['img_shape'])
+                    original1 = target_data[0].reshape(par['img_shape'])
                     output1 = model_output[0].reshape(par['img_shape'])
-                    original2 = input_data[1].reshape(par['img_shape'])
+                    original2 = target_data[1].reshape(par['img_shape'])
                     output2 = model_output[1].reshape(par['img_shape'])
-                    original3 = input_data[2].reshape(par['img_shape'])
+                    original3 = target_data[2].reshape(par['img_shape'])
                     output3 = model_output[2].reshape(par['img_shape'])
                 
                     vis1 = np.concatenate((original1, output1), axis=1)
