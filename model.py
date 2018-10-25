@@ -199,6 +199,28 @@ def eval_weights():
         'b_out' : b_out.eval(),
     }
 
+    if par['num_layers'] >= 3:
+        with tf.variable_scope('encoder', reuse=True):
+            W_enc = tf.get_variable('W_enc')
+            b_latent = tf.get_variable('b_latent')
+
+        weights['W_enc'] = W_enc.eval()
+        weights['b_latent'] = b_latent.eval()
+
+    if par['num_layers'] == 5:
+        with tf.variable_scope('encoder', reuse=True):
+            W_link = tf.get_variable('W_link')
+            b_link = tf.get_variable('b_link')
+
+        with tf.variable_scope('decoder', reuse=True):
+            W_link2 = tf.get_variable('W_link2')
+            b_link2 = tf.get_variable('b_link2')
+
+        weights['W_link'] = W_link.eval()
+        weights['b_link'] = b_link.eval()
+        weights['W_link2'] = W_link2.eval()
+        weights['b_link2'] = b_link2.eval()
+
     return weights
 
 
