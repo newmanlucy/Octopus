@@ -147,16 +147,24 @@ def main(gpu_id = None):
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
-                    original1 = target_data[0].reshape(par['img_shape'])
-                    output1 = model_output[0].reshape(par['img_shape'])
-                    original2 = target_data[1].reshape(par['img_shape'])
-                    output2 = model_output[1].reshape(par['img_shape'])
-                    original3 = target_data[2].reshape(par['img_shape'])
-                    output3 = model_output[2].reshape(par['img_shape'])
+                    # Generate batch from testing set and check the output
+                    input_data, target_data = stim.generate_test_batch()
+                    feed_dict = {x: input_data, y: target_data}
+                    model_output = sess.run([model.output], feed_dict=feed_dict)
+
+                    input1 = input_data[0].reshape(par['inp_img_shape'])
+                    original1 = target_data[0].reshape(par['out_img_shape'])
+                    output1 = model_output[0].reshape(par['out_img_shape'])
+                    input2 = input_data[1].reshape(par['inp_img_shape'])
+                    original2 = target_data[1].reshape(par['out_img_shape'])
+                    output2 = model_output[1].reshape(par['out_img_shape'])
+                    input3 = input_data[2].reshape(par['inp_img_shape'])
+                    original3 = target_data[2].reshape(par['out_img_shape'])
+                    output3 = model_output[2].reshape(par['out_img_shape'])
                 
-                    vis1 = np.concatenate((original1, output1), axis=1)
-                    vis2 = np.concatenate((original2, output2), axis=1)
-                    vis3 = np.concatenate((original3, output3), axis=1)
+                    vis1 = np.concatenate((input1, np.concatenate((original1, output1), axis=1)), axis=1)
+                    vis2 = np.concatenate((input2, np.concatenate((original2, output2), axis=1)), axis=1)
+                    vis3 = np.concatenate((input3, np.concatenate((original3, output3), axis=1)), axis=1)
                     vis = np.concatenate((vis1, vis2), axis=0)
                     vis = np.concatenate((vis, vis3), axis=0)
                     if par['normalize01']:
