@@ -142,7 +142,7 @@ def main(gpu_id = None):
 
                 # Print current status
                 print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['task'], par['run_number'], i, train_loss, time.time()-start))
+                    par['run_number'], par['task'], i, train_loss, time.time()-start))
                 losses.append(train_loss)
 
                 # Save one training and output img from this iteration
