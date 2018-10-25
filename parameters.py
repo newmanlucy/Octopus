@@ -10,7 +10,7 @@ par = {
     # Setup parameters
     'save_dir'          : './savedir/',
     'train_dir'         : './bw_im/',
-    'test_dir'          : './raw_im/'
+    'test_dir'          : './raw_im/',
     'img_size'          : 32,
 
     # Network shape

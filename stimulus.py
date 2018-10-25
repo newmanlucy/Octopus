@@ -8,7 +8,7 @@ class Stimulus:
     def __init__(self):
 
         # Get files from img_dir
-        files = os.listdir(par['img_dir'])
+        files = os.listdir(par['train_dir'])
         for f in files:
             if 'clean' not in f:
                 files.remove(f)
