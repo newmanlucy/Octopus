@@ -334,40 +334,40 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'testing colorization; 3 layers',
+    'a_note'            : 'checking bw task with real testing',
     'n_dec'             : 350,
     'n_enc'             : 350,
     'n_latent'          : 200,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 1,
-    'task'              : 'bw3_to_color'
+    'run_number'        : 12,
+    'task'              : 'bw_to_bw_simple'
 }
 try_model(updates)
 
-updates = {
-    'a_note'            : 'testing colorization; 3 layers',
-    'n_dec'             : 350,
-    'n_enc'             : 350,
-    'n_latent'          : 200,
-    'normalize01'       : False,
-    'num_layers'        : 3,
-    'run_number'        : 2,
-    'task'              : 'bw1_to_color'
-}
-try_model(updates)
+# updates = {
+#     'a_note'            : 'testing colorization; 3 layers',
+#     'n_dec'             : 350,
+#     'n_enc'             : 350,
+#     'n_latent'          : 200,
+#     'normalize01'       : False,
+#     'num_layers'        : 3,
+#     'run_number'        : 2,
+#     'task'              : 'bw1_to_color'
+# }
+# try_model(updates)
 
-updates = {
-    'a_note'            : 'testing colorization without norm; 2 layers',
-    'n_dec'             : 200,
-    'n_enc'             : 200,
-    'n_latent'          : 138,
-    'normalize01'       : False,
-    'num_layers'        : 2,
-    'run_number'        : 3,
-    'task'              : 'bw3_to_color'
-}
-try_model(updates)
+# updates = {
+#     'a_note'            : 'testing colorization without norm; 2 layers',
+#     'n_dec'             : 200,
+#     'n_enc'             : 200,
+#     'n_latent'          : 138,
+#     'normalize01'       : False,
+#     'num_layers'        : 2,
+#     'run_number'        : 3,
+#     'task'              : 'bw3_to_color'
+# }
+# try_model(updates)
 
 # Been using 138 and 200 neurons for 2 layer
 # Model with 200 -> 138 -> 200 with 3 layer does well
