@@ -9,8 +9,8 @@ Set independent parameters
 par = {
     # Setup parameters
     'save_dir'          : './savedir/',
-    'train_dir'         : './bw_im/',
-    'test_dir'          : './raw_im/',
+    'input_dir'         : './bw_im/',
+    'target_dir'        : './raw_im/',
     'img_size'          : 128,
 
     # Network shape
@@ -45,25 +45,28 @@ def update_dependencies():
     print('Updating dependencies...\n')
 
     if par['task'] == 'bw_to_bw':
-        par['train_dir'] = './bw_im'
-        par['test_dir'] = './bw_im'
+        par['input_dir'] = './bw_im'
+        par['target_dir'] = './bw_im'
         par['img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']*3
         par['n_output'] = par['n_input']
+        par['savedir'] = './savedir/bw_to_bw'
 
     elif par['task'] == 'bw_to_bw_simple':
-        par['train_dir'] = './bw_im'
-        par['test_dir'] = './bw_im'
+        par['input_dir'] = './bw_im'
+        par['target_dir'] = './bw_im'
         par['img_shape'] = (par['img_size'],par['img_size'])
         par['n_input'] = par['img_size']*par['img_size']
         par['n_output'] = par['n_input']
+        par['savedir'] = './savedir/bw_to_bw_simple'
 
     elif par['task'] == 'bw3_to_color':
-        par['train_dir'] = './bw_im'
-        par['test_dir'] = './raw_im'
+        par['input_dir'] = './bw_im'
+        par['target_dir'] = './raw_im'
         par['img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']*3
         par['n_output'] = par['n_input']
+        par['savedir'] = './savedir/bw3_to_color'
 
     # Set up initializers
     if par['num_layers'] == 5:

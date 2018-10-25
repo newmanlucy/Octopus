@@ -303,7 +303,6 @@ updates = {
     'normalize01'       : True,
     'num_layers'        : 3,
     'run_number'        : 2,
-    'save_dir'          : './savedir/bw_to_bw/',
     'task'              : 'bw_to_bw'
 }
 try_model(updates)
@@ -316,7 +315,6 @@ updates = {
     'normalize01'       : True,
     'num_layers'        : 3,
     'run_number'        : 3,
-    'save_dir'          : './savedir/bw_to_bw/',
     'task'              : 'bw_to_bw'
 }
 try_model(updates)
@@ -329,7 +327,6 @@ updates = {
     'normalize01'       : False,
     'num_layers'        : 3,
     'run_number'        : 0,
-    'save_dir'          : './savedir/bw3_to_color/',
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
@@ -342,7 +339,6 @@ updates = {
     'normalize01'       : False,
     'num_layers'        : 2,
     'run_number'        : 1,
-    'save_dir'          : './savedir/bw3_to_color/',
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
