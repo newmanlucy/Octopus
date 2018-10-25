@@ -33,7 +33,7 @@ par = {
 
     # Training setup
     'batch_train_size'  : 100,
-    'num_iterations'    : 600001,
+    'num_iterations'    : 300001,
     'print_iter'        : 1000,
     'save_iter'         : 10000
 }

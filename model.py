@@ -141,7 +141,7 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
+                print('Model {:2} | Task: {%s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
                     par['task'], par['run_number'], i, train_loss, time.time()-start))
                 losses.append(train_loss)
 
