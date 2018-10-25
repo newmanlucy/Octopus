@@ -60,7 +60,7 @@ class Stimulus:
         if par['normalize01']:
             vis *= 255
         cv2.imwrite('./debug_input.png', vis)
-        
+
         vis = self.training_output[0].reshape(par['img_shape'])
         if par['normalize01']:
             vis *= 255
@@ -72,7 +72,7 @@ class Stimulus:
         # Pick images to be used for training from training data set
         idx = np.random.choice(len(self.training_data), size=par['batch_train_size'], replace=False)
         input_data = self.training_data[idx]
-        target_data = self.training_data[idx]
+        target_data = self.training_output[idx]
 
         return input_data, target_data
 
