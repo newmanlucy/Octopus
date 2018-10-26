@@ -346,13 +346,25 @@ updates = {
 try_model(updates)
 
 updates = {
-    'a_note'            : 'testing colorization without norm; 2 layers',
+    'a_note'            : 'testing colorization; 3 layers',
+    'n_dec'             : 450,
+    'n_enc'             : 450,
+    'n_latent'          : 300,
+    'normalize01'       : False,
+    'num_layers'        : 3,
+    'run_number'        : 0,
+    'task'              : 'bw3_to_color'
+}
+try_model(updates)
+
+updates = {
+    'a_note'            : 'testing colorization without norm; 5 layers',
     'n_dec'             : 450,
     'n_enc'             : 450,
     'n_link'            : 300,
     'n_latent'          : 138,
     'normalize01'       : False,
-    'num_layers'        : 2,
+    'num_layers'        : 5,
     'run_number'        : 1,
     'task'              : 'bw1_to_color'
 }
