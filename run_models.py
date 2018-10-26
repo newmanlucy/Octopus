@@ -352,7 +352,7 @@ updates = {
     'n_latent'          : 300,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 0,
+    'run_number'        : 2,
     'task'              : 'bw3_to_color'
 }
 try_model(updates)
