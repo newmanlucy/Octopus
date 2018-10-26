@@ -333,43 +333,6 @@ def try_model(updates):
 # try_model(updates)
 
 
-updates = {
-    'a_note'            : 'testing colorization; 3 layers',
-    'n_dec'             : 350,
-    'n_enc'             : 350,
-    'n_latent'          : 200,
-    'normalize01'       : False,
-    'num_layers'        : 3,
-    'run_number'        : 0,
-    'task'              : 'bw1_to_color'
-}
-try_model(updates)
-
-updates = {
-    'a_note'            : 'testing colorization; 3 layers',
-    'n_dec'             : 450,
-    'n_enc'             : 450,
-    'n_latent'          : 300,
-    'normalize01'       : False,
-    'num_layers'        : 3,
-    'run_number'        : 2,
-    'task'              : 'bw3_to_color'
-}
-try_model(updates)
-
-updates = {
-    'a_note'            : 'testing colorization without norm; 5 layers',
-    'n_dec'             : 450,
-    'n_enc'             : 450,
-    'n_link'            : 300,
-    'n_latent'          : 138,
-    'normalize01'       : False,
-    'num_layers'        : 5,
-    'run_number'        : 1,
-    'task'              : 'bw1_to_color'
-}
-try_model(updates)
-
 # updates = {
 #     'a_note'            : 'testing colorization; 3 layers',
 #     'n_dec'             : 350,
@@ -377,10 +340,61 @@ try_model(updates)
 #     'n_latent'          : 200,
 #     'normalize01'       : False,
 #     'num_layers'        : 3,
-#     'run_number'        : 2,
+#     'run_number'        : 0,
 #     'task'              : 'bw1_to_color'
 # }
 # try_model(updates)
+
+# updates = {
+#     'a_note'            : 'testing colorization; 3 layers',
+#     'n_dec'             : 450,
+#     'n_enc'             : 450,
+#     'n_latent'          : 300,
+#     'normalize01'       : False,
+#     'num_layers'        : 3,
+#     'run_number'        : 2,
+#     'task'              : 'bw3_to_color'
+# }
+# try_model(updates)
+
+updates = {
+    'a_note'            : 'testing dropout in input and output',
+    'n_dec'             : 350,
+    'n_enc'             : 350,
+    'n_latent'          : 200,
+    'normalize01'       : False,
+    'num_layers'        : 3,
+    'run_number'        : 2,
+    'task'              : 'bw1_to_color'
+}
+try_model(updates)
+
+updates = {
+    'a_note'            : 'testing dropout in all layers',
+    'dropout'           : 0.8,
+    'n_dec'             : 350,
+    'n_enc'             : 350,
+    'n_latent'          : 200,
+    'normalize01'       : False,
+    'num_layers'        : 3,
+    'run_number'        : 3,
+    'task'              : 'bw1_to_color'
+}
+try_model(updates)
+
+updates = {
+    'a_note'            : 'random big 5 layer with dropout',
+    'dropout'           : 0.8,
+    'n_dec'             : 500,
+    'n_enc'             : 500,
+    'n_latent'          : 150,
+    'n_link'            : 256,
+    'normalize01'       : False,
+    'num_layers'        : 5,
+    'run_number'        : 4,
+    'task'              : 'bw1_to_color'
+}
+try_model(updates)
 
 # updates = {
 #     'a_note'            : 'testing colorization without norm; 2 layers',

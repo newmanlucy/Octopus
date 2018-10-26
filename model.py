@@ -83,10 +83,10 @@ class Model:
             self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 3:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+            self.enc = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc)), 0.8)
+            self.latent = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent)), par['dropout'])
+            self.dec = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec)), par['dropout'])
+            self.output = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out)), 0.8)
         
         elif par['num_layers'] == 2:
             self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
@@ -189,6 +189,7 @@ def main(gpu_id = None):
                 if i > 0:
                     plt.plot(losses[1:])
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
+                    plt.close()
 
                 # Stop training if loss is small enough (just for sweep purposes)
                 # if train_loss < 100:

@@ -25,6 +25,7 @@ par = {
     'task'              : 'bw_to_bw_simple',
     'learning_rate'     : 0.1,
     'connection_prob'   : 1,
+    'dropout'           : 1,
 
     # Variance
     'input_mean'        : 0.0,
