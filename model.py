@@ -117,6 +117,7 @@ def main(gpu_id = None):
     
     # Model stats
     losses = []
+    testing_losses = []
 
     config = tf.ConfigProto()
     with tf.Session(config=config) as sess:
@@ -147,16 +148,18 @@ def main(gpu_id = None):
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
+
                     # Generate batch from testing set and check the output
                     test_input, test_target = stim.generate_test_batch()
                     feed_dict = {x: test_input, y: test_target}
-                    test_output = sess.run(model.output, feed_dict=feed_dict)
+                    test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+                    testing_losses.append(test_loss)
 
                     # Results from a training sample
                     original1 = target_data[0].reshape(par['out_img_shape'])
                     output1 = model_output[0].reshape(par['out_img_shape'])
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(original1,'Target',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
                     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
                     # Results from a testing sample
@@ -164,6 +167,8 @@ def main(gpu_id = None):
                     output2 = test_output[1].reshape(par['out_img_shape'])
                     original3 = test_target[2].reshape(par['out_img_shape'])
                     output3 = test_output[2].reshape(par['out_img_shape'])
+                    cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
                 
                     vis1 = np.concatenate((original1, output1), axis=1)
                     vis2 = np.concatenate((original2, output2), axis=1)
@@ -176,7 +181,7 @@ def main(gpu_id = None):
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
                     weights = eval_weights()
-                    pickle.dump({'weights': weights, 'losses': losses, 'last_iter': i}, \
+                    pickle.dump({'weights': weights, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
 
 
