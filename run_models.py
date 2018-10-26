@@ -334,14 +334,27 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'checking bw task with real testing',
+    'a_note'            : 'testing colorization; 3 layers',
     'n_dec'             : 350,
     'n_enc'             : 350,
     'n_latent'          : 200,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 12,
-    'task'              : 'bw_to_bw_simple'
+    'run_number'        : 0,
+    'task'              : 'bw1_to_color'
+}
+try_model(updates)
+
+updates = {
+    'a_note'            : 'testing colorization without norm; 2 layers',
+    'n_dec'             : 450,
+    'n_enc'             : 450,
+    'n_link'            : 300,
+    'n_latent'          : 138,
+    'normalize01'       : False,
+    'num_layers'        : 2,
+    'run_number'        : 1,
+    'task'              : 'bw1_to_color'
 }
 try_model(updates)
 
