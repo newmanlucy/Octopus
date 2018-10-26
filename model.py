@@ -153,25 +153,21 @@ def main(gpu_id = None):
                     test_output = sess.run(model.output, feed_dict=feed_dict)
 
                     # Results from a training sample
-                    input1 = input_data[0].reshape(par['out_img_shape'])
                     original1 = target_data[0].reshape(par['out_img_shape'])
                     output1 = model_output[0].reshape(par['out_img_shape'])
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(input1,'Input',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
                     cv2.putText(original1,'Target',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
                     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
                     # Results from a testing sample
-                    input2 = test_input[1].reshape(par['out_img_shape'])
                     original2 = test_target[1].reshape(par['out_img_shape'])
                     output2 = test_output[1].reshape(par['out_img_shape'])
-                    input3 = test_input[2].reshape(par['out_img_shape'])
                     original3 = test_target[2].reshape(par['out_img_shape'])
                     output3 = test_output[2].reshape(par['out_img_shape'])
                 
-                    vis1 = np.concatenate((input1, np.concatenate((original1, output1), axis=1)), axis=1)
-                    vis2 = np.concatenate((input2, np.concatenate((original2, output2), axis=1)), axis=1)
-                    vis3 = np.concatenate((input3, np.concatenate((original3, output3), axis=1)), axis=1)
+                    vis1 = np.concatenate((original1, output1), axis=1)
+                    vis2 = np.concatenate((original2, output2), axis=1)
+                    vis3 = np.concatenate((original3, output3), axis=1)
                     vis = np.concatenate((vis1, vis2), axis=0)
                     vis = np.concatenate((vis, vis3), axis=0)
                     if par['normalize01']:
