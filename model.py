@@ -153,7 +153,7 @@ def main(gpu_id = None):
                     test_output = sess.run(model.output, feed_dict=feed_dict)
 
                     # Results from a training sample
-                    input1 = input_data[0].reshape(par['inp_img_shape'])
+                    input1 = input_data[0].reshape(par['out_img_shape'])
                     original1 = target_data[0].reshape(par['out_img_shape'])
                     output1 = model_output[0].reshape(par['out_img_shape'])
                     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -162,10 +162,10 @@ def main(gpu_id = None):
                     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
                     # Results from a testing sample
-                    input2 = test_input[1].reshape(par['inp_img_shape'])
+                    input2 = test_input[1].reshape(par['out_img_shape'])
                     original2 = test_target[1].reshape(par['out_img_shape'])
                     output2 = test_output[1].reshape(par['out_img_shape'])
-                    input3 = test_input[2].reshape(par['inp_img_shape'])
+                    input3 = test_input[2].reshape(par['out_img_shape'])
                     original3 = test_target[2].reshape(par['out_img_shape'])
                     output3 = test_output[2].reshape(par['out_img_shape'])
                 
