@@ -15,31 +15,31 @@ class Stimulus:
 
         # Separate Training and Testing Data
         idx = round(len(files)*0.8)
-        training_input_files = [os.path.join(par['input_dir'], f) for f in files[:idx]]
+        training_input_files  = [os.path.join(par['input_dir'], f) for f in files[:idx]]
         training_target_files = [os.path.join(par['target_dir'], f) for f in files[:idx]]
-        testing_input_files = [os.path.join(par['input_dir'], f) for f in files[idx:]]
-        testing_target_files = [os.path.join(par['target_dir'], f) for f in files[idx:]]
+        testing_input_files   = [os.path.join(par['input_dir'], f) for f in files[idx:]]
+        testing_target_files  = [os.path.join(par['target_dir'], f) for f in files[idx:]]
 
         # Load up images from the files
         # 'bw_to_bw': going from three channel bw image to three channel bw image
         # 'bw_to_bw_simple': going from one channel bw image to one channel bw image
         if par['task'] == 'bw_to_bw' or par['task'] == 'bw3_to_color':
-            training_input_imgs = [cv2.imread(f) for f in training_input_files]
+            training_input_imgs  = [cv2.imread(f) for f in training_input_files]
             training_target_imgs = [cv2.imread(f) for f in training_target_files]
-            testing_input_imgs = [cv2.imread(f) for f in testing_input_files]
-            testing_target_imgs = [cv2.imread(f) for f in testing_target_files]
+            testing_input_imgs   = [cv2.imread(f) for f in testing_input_files]
+            testing_target_imgs  = [cv2.imread(f) for f in testing_target_files]
 
         elif par['task'] == 'bw_to_bw_simple':
-            training_input_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
+            training_input_imgs  = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
             training_target_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_target_files]
-            testing_input_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
-            testing_target_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_target_files]
+            testing_input_imgs   = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
+            testing_target_imgs  = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_target_files]
         
         elif par['task'] == 'bw1_to_color':
-            training_input_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
+            training_input_imgs  = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
             training_target_imgs = [cv2.imread(f) for f in training_target_files]
-            testing_input_imgs = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
-            testing_target_imgs = [cv2.imread(f) for f in testing_target_files]
+            testing_input_imgs   = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
+            testing_target_imgs  = [cv2.imread(f) for f in testing_target_files]
 
         else:
             raise Exception('Task "{}" not yet implemented.'.format(par['task']))
