@@ -56,11 +56,18 @@ class Stimulus:
         self.testing_data    = np.array([np.array(img).reshape(par['n_input']) for img in testing_imgs_small])
         self.testing_output  = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out])
 
+        # Normalize data
         if par['normalize01']:
+            print("NORMALIZING")
             self.training_data   = self.training_data/255
             self.training_output = self.training_output/255
             self.testing_data    = self.testing_data/255
             self.testing_output  = self.testing_output/255
+
+            if np.min(self.training_data) < 0 or np.max(self.training_data) > 1:
+                print(np.min(self.training_data), np.max(self.training_data))
+                print("WHAT AM I DOING")
+                quit()
 
 
     def generate_train_batch(self):
@@ -70,15 +77,17 @@ class Stimulus:
         input_data = self.training_data[idx]
         target_data = self.training_output[idx]
 
+        # Checking input image
         vis = self.training_data[0].reshape(par['inp_img_shape'])
         if par['normalize01']:
             vis *= 255
         cv2.imwrite(par['save_dir']+'debug_input.png', vis)
 
+        # Checking target image
         vis = self.training_output[0].reshape(par['out_img_shape'])
         if par['normalize01']:
             vis *= 255
-        cv2.imwrite(par['save_dir']+'debug_output.png', vis)
+        cv2.imwrite(par['save_dir']+'debug_target.png', vis)
 
         return input_data, target_data
 

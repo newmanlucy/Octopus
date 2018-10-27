@@ -83,10 +83,11 @@ class Model:
             self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 3:
-            self.enc = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc)), 0.8)
-            self.latent = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent)), par['dropout'])
-            self.dec = tf.nn.dropout(tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec)), par['dropout'])
-            self.output = tf.nn.dropout(tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out)), 0.8)
+            print("Relu with sigmoid")
+            self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
+            self.latent = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
+            self.dec = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
+            self.output = tf.nn.sigmoid(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 2:
             self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
@@ -96,7 +97,8 @@ class Model:
 
     def optimize(self):
         # Calculae loss
-        self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
+        # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
+        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
         self.train_op = tf.train.AdagradOptimizer(par['learning_rate']).minimize(self.loss)
 
 
@@ -137,6 +139,10 @@ def main(gpu_id = None):
             input_data, target_data = stim.generate_train_batch()
             feed_dict = {x: input_data, y: target_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
+            
+            # if np.max(model_output) > 255 or np.min(model_output) <= 0:
+                # print("Input:", round(np.max(input_data),3), round(np.min(input_data),3))
+                # print("Output:", round(np.max(model_output),3), round(np.min(model_output),3))
 
             # Check current status
             if i % par['print_iter'] == 0:
@@ -159,16 +165,16 @@ def main(gpu_id = None):
                     original1 = target_data[0].reshape(par['out_img_shape'])
                     output1 = model_output[0].reshape(par['out_img_shape'])
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    # cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    # cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
                     # Results from a testing sample
                     original2 = test_target[1].reshape(par['out_img_shape'])
                     output2 = test_output[1].reshape(par['out_img_shape'])
                     original3 = test_target[2].reshape(par['out_img_shape'])
                     output3 = test_output[2].reshape(par['out_img_shape'])
-                    cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    # cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+                    # cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
                 
                     vis1 = np.concatenate((original1, output1), axis=1)
                     vis2 = np.concatenate((original2, output2), axis=1)
@@ -176,7 +182,15 @@ def main(gpu_id = None):
                     vis = np.concatenate((vis1, vis2), axis=0)
                     vis = np.concatenate((vis, vis3), axis=0)
                     if par['normalize01']:
-                        vis *= 255
+                        # print("UN-NORMALIZE")
+                        if np.max(vis) > 1 or np.min(vis) < 0:
+                            print(np.max(vis))
+                            print(np.min(vis))
+                            print("Something is wrong")
+                            quit()
+                        vis = np.float128(vis)
+                        vis = vis * 255
+                        vis = np.int8(vis)
 
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
