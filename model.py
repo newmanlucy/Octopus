@@ -28,6 +28,9 @@ from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.datasets import cifar10
 from keras.utils import plot_model
 from keras import backend as K
+os.environ["CUDA_VISIBLE_DEVICES"] = args[1]
+K.tensorflow_backend._get_available_gpus()
+
 
 import numpy as np
 
