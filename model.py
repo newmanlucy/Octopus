@@ -1,270 +1,236 @@
-"""
-Catherine (Chaihyun) Lee & Lucy Newman (2018)
-Contributions from Rick Stevens
-"""
+'''Colorization autoencoder
 
-import tensorflow as tf
+The autoencoder is trained with grayscale images as input
+and colored images as output.
+Colorization autoencoder can be treated like the opposite
+of denoising autoencoder. Instead of removing noise, colorization
+adds noise (color) to the grayscale image.
+
+Grayscale Images --> Colorization --> Color Images
+'''
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import matplotlib
+matplotlib.use("Agg")
+
+import argparse
 import cv2
-import pickle
-import time
-import numpy as numpy
-from stimulus import Stimulus
+import sys
+
+from keras.layers import Dense, Input
+from keras.layers import Conv2D, Flatten
+from keras.layers import Reshape, Conv2DTranspose
+from keras.models import Model
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from keras.datasets import cifar10
+from keras.utils import plot_model
+from keras import backend as K
+
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-from parameters import *
-
-# Ignore tensorflow warning
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
-
-class Model:
-
-    def __init__(self, input_data, target_data):
-        # Load input and target data
-        self.input_data = input_data
-        self.target_data = target_data
-
-        # Run model
-        self.run_model()
-
-        # Optimize
-        self.optimize()
-
-    def run_model(self):
-        
-        # Get weights and biases
-        if par['num_layers'] == 5:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-                self.W_enc = tf.get_variable('W_enc', initializer=par['W_enc_init'], trainable=True)
-                self.b_latent = tf.get_variable('b_latent', initializer=par['b_latent_init'], trainable=True)
-                self.W_link = tf.get_variable('W_link', initializer=par['W_link_init'], trainable=True)
-                self.b_link = tf.get_variable('b_link', initializer=par['b_link_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_link2 = tf.get_variable('W_link2', initializer=par['W_link2_init'], trainable=True)
-                self.b_link2 = tf.get_variable('b_link2', initializer=par['b_link2_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-        
-        elif par['num_layers'] == 3:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-                self.W_enc = tf.get_variable('W_enc', initializer=par['W_enc_init'], trainable=True)
-                self.b_latent = tf.get_variable('b_latent', initializer=par['b_latent_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-
-        elif par['num_layers'] == 2:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-
-        # Run input through the model layers
-        if par['num_layers'] == 5:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.link = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.link, self.W_link), self.b_link))
-            self.link2 = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.link2, self.W_link2), self.b_link2))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-        
-        elif par['num_layers'] == 3:
-            print("Relu with sigmoid")
-            self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.latent = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.dec = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-        
-        elif par['num_layers'] == 2:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_dec), self.b_dec))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+import os
 
 
-    def optimize(self):
-        # Calculae loss
-        # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
-        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.train_op = tf.train.AdagradOptimizer(par['learning_rate']).minimize(self.loss)
+# convert from color image (RGB) to grayscale
+# source: opencv.org
+# grayscale = 0.299*red + 0.587*green + 0.114*blue
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+
+# loop through the directory on the command line to
+# read in the training and test images
+# we use the cv2 generatlized reader
+
+dir = './raw_im' #sys.argv[1]
+
+imgs_in = []
+
+for root, _, files in os.walk(dir):
+    for f in files:
+        fullpath = os.path.join(root, f)
+
+        img = cv2.imread(fullpath)
+
+        imgs_in.append(img)
+
+imgs_array = np.array(imgs_in)        
 
 
-def main(gpu_id = None):
+# call scikit-learn function to partition into random train and test sets
+# we call with the img_arry twice since we dont have labels and need an Y with same length
+# recall that _ are throw aways
+x_train, x_test, _, _ = train_test_split(imgs_array, imgs_array, test_size= 0.20, random_state=42)
 
-    if gpu_id is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+# input image dimensions
+# we assume data format "channels_last"
+img_rows = x_train.shape[1]
+img_cols = x_train.shape[2]
+channels = x_train.shape[3]
 
-    # Reset Tensorflow graph
-    tf.reset_default_graph()
+# create saved_images folder
+imgs_dir = 'saved_images'
+save_dir = os.path.join(os.getcwd(), imgs_dir)
+if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
 
-    # Generate stimulus
-    stim = Stimulus()
+# display the 1st 25 input images (color and gray)
+imgs = x_test[:25]
+imgs = imgs.reshape((5, 5, img_rows, img_cols, channels))
+imgs = np.vstack([np.hstack(i) for i in imgs])
+plt.figure()
+plt.axis('off')
+plt.title('Test color images (Ground  Truth)')
+plt.imshow(imgs, interpolation='none')
+plt.savefig('%s/test_color.png' % imgs_dir)
+plt.show()
 
-    # Placeholders for the tensorflow model
-    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']])
-    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']])
-    
-    # Model stats
-    losses = []
-    testing_losses = []
+# convert color train and test images to gray
+# we are using a custom formula that leaves the images in 3 channels
+x_train_gray = rgb2gray(x_train)
+x_test_gray = rgb2gray(x_test)
 
-    config = tf.ConfigProto()
-    with tf.Session(config=config) as sess:
-
-        device = '/cpu:0' if gpu_id is None else '/gpu:0'
-        with tf.device(device):
-            model = Model(x,y)
-        
-        init = tf.global_variables_initializer()
-        sess.run(init)
-
-        # Train the model
-        start = time.time()
-        for i in range(par['num_iterations']):
-
-            # Generate training set
-            input_data, target_data = stim.generate_train_batch()
-            feed_dict = {x: input_data, y: target_data}
-            _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
-            
-            # if np.max(model_output) > 255 or np.min(model_output) <= 0:
-                # print("Input:", round(np.max(input_data),3), round(np.min(input_data),3))
-                # print("Output:", round(np.max(model_output),3), round(np.min(model_output),3))
-
-            # Check current status
-            if i % par['print_iter'] == 0:
-
-                # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, train_loss, time.time()-start))
-                losses.append(train_loss)
-
-                # Save one training and output img from this iteration
-                if i % par['save_iter'] == 0:
-
-                    # Generate batch from testing set and check the output
-                    test_input, test_target = stim.generate_test_batch()
-                    feed_dict = {x: test_input, y: test_target}
-                    test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
-                    testing_losses.append(test_loss)
-
-                    # Results from a training sample
-                    original1 = target_data[0].reshape(par['out_img_shape'])
-                    output1 = model_output[0].reshape(par['out_img_shape'])
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    # cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    # cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-
-                    # Results from a testing sample
-                    original2 = test_target[1].reshape(par['out_img_shape'])
-                    output2 = test_output[1].reshape(par['out_img_shape'])
-                    original3 = test_target[2].reshape(par['out_img_shape'])
-                    output3 = test_output[2].reshape(par['out_img_shape'])
-                    # cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    # cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                
-                    vis1 = np.concatenate((original1, output1), axis=1)
-                    vis2 = np.concatenate((original2, output2), axis=1)
-                    vis3 = np.concatenate((original3, output3), axis=1)
-                    vis = np.concatenate((vis1, vis2), axis=0)
-                    vis = np.concatenate((vis, vis3), axis=0)
-                    if par['normalize01']:
-                        # print("UN-NORMALIZE")
-                        if np.max(vis) > 1 or np.min(vis) < 0:
-                            print(np.max(vis))
-                            print(np.min(vis))
-                            print("Something is wrong")
-                            quit()
-                        vis = np.float128(vis)
-                        vis = vis * 255
-                        vis = np.int8(vis)
-
-                    cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
-
-                    weights = eval_weights()
-                    pickle.dump({'weights': weights, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+# display grayscale version of test images
+imgs = x_test_gray[:25]
+imgs = imgs.reshape((5, 5, img_rows, img_cols))
+imgs = np.vstack([np.hstack(i) for i in imgs])
+plt.figure()
+plt.axis('off')
+plt.title('Test gray images (Input)')
+plt.imshow(imgs, interpolation='none', cmap='gray')
+plt.savefig('%s/test_gray.png' % imgs_dir)
+plt.show()
 
 
-                # Plot loss curve
-                if i > 0:
-                    plt.plot(losses[1:])
-                    plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
-                    plt.close()
+# normalize output train and test color images
+x_train = x_train.astype('float32') / 255
+x_test = x_test.astype('float32') / 255
 
-                # Stop training if loss is small enough (just for sweep purposes)
-                # if train_loss < 100:
-                    # break
+# normalize input train and test grayscale images
+x_train_gray = x_train_gray.astype('float32') / 255
+x_test_gray = x_test_gray.astype('float32') / 255
 
-def eval_weights():
+# reshape images to row x col x channel for CNN output/validation
+x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, channels)
+x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, channels)
 
-    with tf.variable_scope('encoder', reuse=True):
-        W_in = tf.get_variable('W_in')
-        b_enc = tf.get_variable('b_enc')
+# reshape images to row x col x channel for CNN input
+x_train_gray = x_train_gray.reshape(x_train_gray.shape[0], img_rows, img_cols, 1)
+x_test_gray = x_test_gray.reshape(x_test_gray.shape[0], img_rows, img_cols, 1)
 
-    with tf.variable_scope('decoder', reuse=True):
-        W_dec = tf.get_variable('W_dec')
-        b_dec = tf.get_variable('b_dec')
-        W_out = tf.get_variable('W_out')
-        b_out = tf.get_variable('b_out')
+# network parameters
+input_shape = (img_rows, img_cols, 1)
+batch_size = 32
+kernel_size = 3
+latent_dim = 256
+# encoder/decoder number of CNN layers and filters per layer
+layer_filters = [64, 128, 256]
 
-    weights = {
-        'W_in'  : W_in.eval(),
-        'W_dec' : W_dec.eval(),
-        'W_out' : W_out.eval(),
-        'b_enc' : b_enc.eval(),
-        'b_dec' : b_dec.eval(),
-        'b_out' : b_out.eval(),
-    }
+# build the autoencoder model
+# first build the encoder model
+print('building...!')
+inputs = Input(shape=input_shape, name='encoder_input')
+x = inputs
+# stack of Conv2D(64)-Conv2D(128)-Conv2D(256)
+for filters in layer_filters:
+    print('layers')
+    x = Conv2D(filters=filters,
+               kernel_size=kernel_size,
+               strides=2,
+               activation='relu',
+               padding='same')(x)
+print('buit...!')
 
-    if par['num_layers'] >= 3:
-        with tf.variable_scope('encoder', reuse=True):
-            W_enc = tf.get_variable('W_enc')
-            b_latent = tf.get_variable('b_latent')
+# shape info needed to build decoder model so we don't do hand computation
+# the input to the decoder's first Conv2DTranspose will have this shape
+# shape is (4, 4, 256) which is processed by the decoder back to (32, 32, 3)
+shape = K.int_shape(x)
 
-        weights['W_enc'] = W_enc.eval()
-        weights['b_latent'] = b_latent.eval()
+# generate a latent vector
+x = Flatten()(x)
+latent = Dense(latent_dim, name='latent_vector')(x)
 
-    if par['num_layers'] == 5:
-        with tf.variable_scope('encoder', reuse=True):
-            W_link = tf.get_variable('W_link')
-            b_link = tf.get_variable('b_link')
+# instantiate encoder model
+encoder = Model(inputs, latent, name='encoder')
+encoder.summary()
 
-        with tf.variable_scope('decoder', reuse=True):
-            W_link2 = tf.get_variable('W_link2')
-            b_link2 = tf.get_variable('b_link2')
+# build the decoder model
+latent_inputs = Input(shape=(latent_dim,), name='decoder_input')
+x = Dense(shape[1]*shape[2]*shape[3])(latent_inputs)
+x = Reshape((shape[1], shape[2], shape[3]))(x)
 
-        weights['W_link'] = W_link.eval()
-        weights['b_link'] = b_link.eval()
-        weights['W_link2'] = W_link2.eval()
-        weights['b_link2'] = b_link2.eval()
+# stack of Conv2DTranspose(256)-Conv2DTranspose(128)-Conv2DTranspose(64)
+for filters in layer_filters[::-1]:
+    x = Conv2DTranspose(filters=filters,
+                        kernel_size=kernel_size,
+                        strides=2,
+                        activation='relu',
+                        padding='same')(x)
 
-    return weights
+outputs = Conv2DTranspose(filters=channels,
+                          kernel_size=kernel_size,
+                          activation='sigmoid',
+                          padding='same',
+                          name='decoder_output')(x)
 
+# instantiate decoder model
+decoder = Model(latent_inputs, outputs, name='decoder')
+decoder.summary()
 
-if __name__ == "__main__":
-    main()
+# autoencoder = encoder + decoder
+# instantiate autoencoder model
+autoencoder = Model(inputs, decoder(encoder(inputs)), name='autoencoder')
+autoencoder.summary()
 
+# prepare model saving directory.
+save_dir = os.path.join(os.getcwd(), 'saved_models')
+model_name = 'colorized_ae_model.{epoch:03d}.h5'
+if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+filepath = os.path.join(save_dir, model_name)
 
+# reduce learning rate by sqrt(0.1) if the loss does not improve in 5 epochs
+lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1),
+                               cooldown=0,
+                               patience=5,
+                               verbose=1,
+                               min_lr=0.5e-6)
 
+# save weights for future use (e.g. reload parameters w/o training)
+checkpoint = ModelCheckpoint(filepath=filepath,
+                             monitor='val_loss',
+                             verbose=1,
+                             save_best_only=True)
 
+# Mean Square Error (MSE) loss function, Adam optimizer
+autoencoder.compile(loss='mse', optimizer='adam')
 
+# called every epoch
+callbacks = [lr_reducer, checkpoint]
 
+# train the autoencoder
+autoencoder.fit(x_train_gray,
+                x_train,
+                validation_data=(x_test_gray, x_test),
+                epochs=300,
+                batch_size=batch_size,
+                callbacks=callbacks)
 
+# predict the autoencoder output from test data
+x_decoded = autoencoder.predict(x_test_gray)
 
-
-
-
+# display the 1st 100 colorized images
+imgs = x_decoded[:25]
+imgs = imgs.reshape((5, 5, img_rows, img_cols, channels))
+imgs = np.vstack([np.hstack(i) for i in imgs])
+plt.figure()
+plt.axis('off')
+plt.title('Colorized test images (Predicted)')
+plt.imshow(imgs, interpolation='none')
+plt.savefig('%s/colorized.png' % imgs_dir)
+plt.show()
