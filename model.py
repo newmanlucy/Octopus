@@ -87,7 +87,7 @@ class Model:
             self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
             self.latent = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
             self.dec = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.output = tf.nn.sigmoid(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 2:
             self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))

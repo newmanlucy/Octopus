@@ -45,9 +45,9 @@ updates = {
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
-    'normalize01'       : True,
+    'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 15,
+    'run_number'        : 14,
     "save_iter"         : 10000,
     'task'              : 'bw_to_bw_simple'
 }
