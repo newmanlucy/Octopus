@@ -19,6 +19,7 @@ matplotlib.use("Agg")
 import argparse
 import cv2
 import sys
+import os
 
 from keras.layers import Dense, Input
 from keras.layers import Conv2D, Flatten
@@ -28,7 +29,7 @@ from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from keras.datasets import cifar10
 from keras.utils import plot_model
 from keras import backend as K
-os.environ["CUDA_VISIBLE_DEVICES"] = argv[1]
+os.environ["CUDA_VISIBLE_DEVICES"] = sys.argv[1]
 K.tensorflow_backend._get_available_gpus()
 
 
@@ -37,7 +38,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 import matplotlib.pyplot as plt
-import os
 
 
 # convert from color image (RGB) to grayscale
@@ -136,7 +136,6 @@ layer_filters = [64, 128, 256]
 
 # build the autoencoder model
 # first build the encoder model
-print('building...!')
 inputs = Input(shape=input_shape, name='encoder_input')
 x = inputs
 # stack of Conv2D(64)-Conv2D(128)-Conv2D(256)
@@ -147,7 +146,6 @@ for filters in layer_filters:
                strides=2,
                activation='relu',
                padding='same')(x)
-print('buit...!')
 
 # shape info needed to build decoder model so we don't do hand computation
 # the input to the decoder's first Conv2DTranspose will have this shape
