@@ -153,7 +153,7 @@ class Model:
         # Calculae loss
         # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
         self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.train_op = tf.train.AdagradOptimizer(par['learning_rate']).minimize(self.loss)
+        self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
 
 def main(gpu_id = None):
