@@ -75,18 +75,21 @@ class Model:
 
         # Run input through the model layers
         if par['num_layers'] == 5:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.link = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.link, self.W_link), self.b_link))
-            self.link2 = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.link2, self.W_link2), self.b_link2))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+            self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
+            self.link = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
+            self.latent = tf.nn.relu(tf.add(tf.matmul(self.link, self.W_link), self.b_link))
+            self.link2 = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
+            self.dec = tf.nn.relu(tf.add(tf.matmul(self.link2, self.W_link2), self.b_link2))
+            if par['normalize01']:
+                self.output = tf.nn.sigmoid(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+            else:
+                self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 3:
             print("Relu with sigmoid")
-            self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.latent = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.dec = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
+            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
+            self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
+            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
             self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
         
         elif par['num_layers'] == 2:
@@ -97,9 +100,9 @@ class Model:
 
     def optimize(self):
         # Calculae loss
-        # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
-        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.train_op = tf.train.AdagradOptimizer(par['learning_rate']).minimize(self.loss)
+        self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
+        #self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
+        self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
 
 def main(gpu_id = None):
@@ -188,9 +191,7 @@ def main(gpu_id = None):
                             print(np.min(vis))
                             print("Something is wrong")
                             quit()
-                        vis = np.float128(vis)
                         vis = vis * 255
-                        vis = np.int8(vis)
 
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
