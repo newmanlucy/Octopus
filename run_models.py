@@ -39,17 +39,17 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'testing normalization with relu and linear at end',
-    'batch_train_size'  : 20,
+    'a_note'            : 'conv developing',
+    'batch_train_size'  : 32,
     'learning_rate'     : 0.001,
     'n_dec'             : 200,
     'n_enc'             : 200,
     'n_latent'          : 138,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 14,
+    'run_number'        : 3,
     "save_iter"         : 10000,
-    'task'              : 'bw_to_bw_simple'
+    'task'              : 'bw1_to_color'
 }
 try_model(updates)
 

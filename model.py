@@ -29,7 +29,61 @@ class Model:
         # Optimize
         self.optimize()
 
+
+    def conv2d(self, x, W):
+
+        return tf.nn.conv2d(x, W, strides=[1,1,1,1], padding='SAME')
+
+
+    def max_pool2d(self, x):
+
+        return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
+ 
     def run_model(self):
+
+        # 5x5 convolution with 1 inputs and 32 outputs
+        weights = {'W_conv1': tf.Variable(tf.random_normal([3,3,1,64])), #used to be 5,5
+                   'W_conv2': tf.Variable(tf.random_normal([3,3,64,128])), 
+                   'W_conv3': tf.Variable(tf.random_normal([3,3,128,256])),
+                   'W_fc': tf.Variable(tf.random_normal([16*16*256,256])), 
+                   'W_out': tf.Variable(tf.random_normal([256,par['n_output']]))}
+
+        biases = {'b_conv1': tf.Variable(tf.random_normal([64])), 
+                   'b_conv2': tf.Variable(tf.random_normal([128])), 
+                   'b_conv3': tf.Variable(tf.random_normal([256])),
+                   'b_fc': tf.Variable(tf.random_normal([256])), 
+                   'b_out': tf.Variable(tf.random_normal([par['n_output']]))}
+
+        x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],1])
+        # print(x.shape)
+        # quit()
+
+        # might need to consider relu
+        conv1 = self.conv2d(x, weights['W_conv1'])
+        conv1 = self.max_pool2d(conv1) + biases['b_conv1']
+        # print(conv1.shape)
+        # quit()
+
+        conv2 = self.conv2d(conv1, weights['W_conv2'])
+        conv2 = self.max_pool2d(conv2) + biases['b_conv2']
+
+        conv3 = self.conv2d(conv2, weights['W_conv3'])
+        conv3 = self.max_pool2d(conv3) + biases['b_conv3']
+
+        latent = tf.reshape(conv3, [par['batch_train_size'],conv3.shape[1]*conv3.shape[2]*conv3.shape[3]])
+        latent = tf.nn.relu(tf.matmul(latent, weights['W_fc']) + biases['b_fc'])
+
+        # print(latent.shape) #32 x 256
+        # fc = tf.reshape(conv2, [-1,7,7,64])
+        # fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
+
+        self.output = tf.matmul(latent, weights['W_out']) + biases['b_out']
+        
+
+
+
+        """
         
         # Get weights and biases
         if par['num_layers'] == 5:
@@ -93,7 +147,7 @@ class Model:
             self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
             self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_dec), self.b_dec))
             self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-
+        """
 
     def optimize(self):
         # Calculae loss
@@ -194,7 +248,8 @@ def main(gpu_id = None):
 
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
-                    weights = eval_weights()
+                    # weights = eval_weights()
+                    weights = None
                     pickle.dump({'weights': weights, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
 
