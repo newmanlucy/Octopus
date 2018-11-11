@@ -59,10 +59,10 @@ class Stimulus:
         # Normalize data
         if par['normalize01']:
             print("NORMALIZING")
-            self.training_data   = self.training_data/255
-            self.training_output = self.training_output/255
-            self.testing_data    = self.testing_data/255
-            self.testing_output  = self.testing_output/255
+            self.training_data   = np.float32(self.training_data)/255
+            self.training_output = np.float32(self.training_output)/255
+            self.testing_data    = np.float32(self.testing_data)/255
+            self.testing_output  = np.float32(self.testing_output)/255
 
             if np.min(self.training_data) < 0 or np.max(self.training_data) > 1:
                 print(np.min(self.training_data), np.max(self.training_data))
@@ -80,13 +80,13 @@ class Stimulus:
         # Checking input image
         vis = self.training_data[0].reshape(par['inp_img_shape'])
         if par['normalize01']:
-            vis *= 255
+            pass #vis *= 255
         cv2.imwrite(par['save_dir']+'debug_input.png', vis)
 
         # Checking target image
         vis = self.training_output[0].reshape(par['out_img_shape'])
         if par['normalize01']:
-            vis *= 255
+            pass #vis *= 255
         cv2.imwrite(par['save_dir']+'debug_target.png', vis)
 
         return input_data, target_data

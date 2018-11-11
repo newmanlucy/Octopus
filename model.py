@@ -269,15 +269,14 @@ def main(gpu_id = None):
                     vis = np.concatenate((vis1, vis2), axis=0)
                     vis = np.concatenate((vis, vis3), axis=0)
                     if par['normalize01']:
-                        # print("UN-NORMALIZE")
+                        print("UN-NORMALIZE")
                         if np.max(vis) > 1 or np.min(vis) < 0:
                             print(np.max(vis))
                             print(np.min(vis))
                             print("Something is wrong")
                             quit()
-                        vis = np.float128(vis)
-                        vis = vis * 255
-                        vis = np.int8(vis)
+                        vis *= 255
+                        # vis = np.int8(vis)
 
                     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
