@@ -40,6 +40,8 @@ def try_model(updates):
 
 updates = {
     'a_note'            : 'conv developing',
+    'input_dir'         : './bw_im2/',
+    'target_dir'        : './raw_im2/',
     'batch_train_size'  : 32,
     'learning_rate'     : 0.001,
     'n_dec'             : 200,
@@ -48,7 +50,7 @@ updates = {
     'normalize01'       : False,
     'num_layers'        : 3,
     'run_number'        : 3,
-    "save_iter"         : 10000,
+    "save_iter"         : 2000,
     'task'              : 'bw1_to_color'
 }
 try_model(updates)

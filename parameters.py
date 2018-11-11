@@ -9,8 +9,8 @@ Set independent parameters
 par = {
     # Setup parameters
     'save_dir'          : './savedir/',
-    'input_dir'         : './bw_im/',
-    'target_dir'        : './raw_im/',
+    'input_dir'         : './bw_im2/',
+    'target_dir'        : './raw_im2/',
     'img_size'          : 128,
 
     # Network shape
@@ -34,9 +34,9 @@ par = {
 
     # Training setup
     'batch_train_size'  : 100,
-    'num_iterations'    : 250001,
+    'num_iterations'    : 30001,
     'print_iter'        : 1000,
-    'save_iter'         : 10000
+    'save_iter'         : 2000
 }
 
 """

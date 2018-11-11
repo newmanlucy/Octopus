@@ -8,6 +8,7 @@ import cv2
 import pickle
 import time
 import numpy as numpy
+import copy
 from stimulus import Stimulus
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
@@ -87,101 +88,12 @@ class Model:
 
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
         # print(logits.shape)
-        self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+        if par['normalize01']:
+            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+        else:
+            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
 
-        # conv2 = self.conv2d(conv1, weights['W_conv2'])
-        # print("Conv2: ", conv2.shape)
-        # conv2 = self.max_pool2d(conv2) + biases['b_conv2']
-        # print("Conv2: ", conv2.shape)
-        # print()
-
-
-        # conv3 = self.conv2d(conv2, weights['W_conv3'])
-        # print("Conv3: ", conv3.shape)
-        # conv3 = self.max_pool2d(conv3) + biases['b_conv3']
-        # print("Conv3: ", conv3.shape)
-        # print()
-
-        # latent = tf.reshape(conv3, [par['batch_train_size'],conv3.shape[1]*conv3.shape[2]*conv3.shape[3]])
-        # latent = tf.nn.relu(tf.matmul(latent, weights['W_fc']) + biases['b_fc'])
-        # print("Latent: ", latent)
-
-        # print(latent.shape) #32 x 256
-        # fc = tf.reshape(conv2, [-1,7,7,64])
-        # fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
-
-        # self.output = tf.matmul(latent, weights['W_out']) + biases['b_out']
-        # print("Output: ", self.output)
-        
-
-
-
-        """
-        
-        # Get weights and biases
-        if par['num_layers'] == 5:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-                self.W_enc = tf.get_variable('W_enc', initializer=par['W_enc_init'], trainable=True)
-                self.b_latent = tf.get_variable('b_latent', initializer=par['b_latent_init'], trainable=True)
-                self.W_link = tf.get_variable('W_link', initializer=par['W_link_init'], trainable=True)
-                self.b_link = tf.get_variable('b_link', initializer=par['b_link_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_link2 = tf.get_variable('W_link2', initializer=par['W_link2_init'], trainable=True)
-                self.b_link2 = tf.get_variable('b_link2', initializer=par['b_link2_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-        
-        elif par['num_layers'] == 3:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-                self.W_enc = tf.get_variable('W_enc', initializer=par['W_enc_init'], trainable=True)
-                self.b_latent = tf.get_variable('b_latent', initializer=par['b_latent_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-
-        elif par['num_layers'] == 2:
-            with tf.variable_scope('encoder'):
-                self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-                self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-
-            with tf.variable_scope('decoder'):
-                self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-                self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-                self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-                self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
-
-        # Run input through the model layers
-        if par['num_layers'] == 5:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.link = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.link, self.W_link), self.b_link))
-            self.link2 = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.link2, self.W_link2), self.b_link2))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-        
-        elif par['num_layers'] == 3:
-            print("Relu with sigmoid")
-            self.enc = tf.nn.relu(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.latent = tf.nn.relu(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-            self.dec = tf.nn.relu(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-        
-        elif par['num_layers'] == 2:
-            self.enc = tf.nn.sigmoid(tf.add(tf.matmul(self.input_data, self.W_in), self.b_enc))
-            self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_dec), self.b_dec))
-            self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
-        """
-
+ 
     def optimize(self):
         # Calculae loss
         # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
@@ -248,37 +160,7 @@ def main(gpu_id = None):
                     test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
                     testing_losses.append(test_loss)
 
-                    # Results from a training sample
-                    original1 = target_data[0].reshape(par['out_img_shape'])
-                    output1 = model_output[0].reshape(par['out_img_shape'])
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    # cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    # cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-
-                    # Results from a testing sample
-                    original2 = test_target[1].reshape(par['out_img_shape'])
-                    output2 = test_output[1].reshape(par['out_img_shape'])
-                    original3 = test_target[2].reshape(par['out_img_shape'])
-                    output3 = test_output[2].reshape(par['out_img_shape'])
-                    # cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                    # cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-                
-                    vis1 = np.concatenate((original1, output1), axis=1)
-                    vis2 = np.concatenate((original2, output2), axis=1)
-                    vis3 = np.concatenate((original3, output3), axis=1)
-                    vis = np.concatenate((vis1, vis2), axis=0)
-                    vis = np.concatenate((vis, vis3), axis=0)
-                    if par['normalize01']:
-                        print("UN-NORMALIZE")
-                        if np.max(vis) > 1 or np.min(vis) < 0:
-                            print(np.max(vis))
-                            print(np.min(vis))
-                            print("Something is wrong")
-                            quit()
-                        vis *= 255
-                        # vis = np.int8(vis)
-
-                    cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
+                    plot_outputs(target_data, model_output, test_target, test_output, i)
 
                     # weights = eval_weights()
                     weights = None
@@ -291,13 +173,94 @@ def main(gpu_id = None):
                     plt.plot(losses[1:])
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
                     plt.close()
+            
+        # Generate batch from testing set and check the output
+        test_input, test_target = stim.generate_test_batch()
+        feed_dict = {x: test_input, y: test_target}
+        test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+        print("FINAL TEST LOSS IS: ", test_loss)
 
-                # Stop training if loss is small enough (just for sweep purposes)
-                # if train_loss < 100:
-                    # break
+        plt.plot(testing_losses)
+        plt.savefig(par['save_dir']+'run_test_'+str(par['run_number'])+'_testing_curve.png')
+        plt.close()
+
+        for i in range(10):
+            idx = [i, i+10, i+20, i+30]
+            plot_testing(test_target[idx], test_output[idx], i)
+
+
+def plot_testing(test_target, test_output, i):
+
+    # Results from a testing sample
+    original1 = test_target[0].reshape(par['out_img_shape'])
+    output1 = test_output[0].reshape(par['out_img_shape'])
+    original2 = test_target[1].reshape(par['out_img_shape'])
+    output2 = test_output[1].reshape(par['out_img_shape'])
+    original3 = test_target[2].reshape(par['out_img_shape'])
+    output3 = test_output[2].reshape(par['out_img_shape'])
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(original1,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+
+    vis1 = np.concatenate((original1, output1), axis=1)
+    vis2 = np.concatenate((original2, output2), axis=1)
+    vis3 = np.concatenate((original3, output3), axis=1)
+    vis = np.concatenate((vis1, vis2), axis=0)
+    vis = np.concatenate((vis, vis3), axis=0)
+    vis = copy.deepcopy(vis)
+    if par['normalize01']:
+        print("UN-NORMALIZE")
+        if np.max(vis) > 1 or np.min(vis) < 0:
+            print(np.max(vis))
+            print(np.min(vis))
+            print("Something is wrong")
+            quit()
+        vis *= 255
+        vis = np.int16(vis)
+
+    cv2.imwrite(par['save_dir']+'run_test_'+str(par['run_number'])+'_output_'+str(i)+'.png', vis)
+
+
+def plot_outputs(target_data, model_output, test_target, test_output, i):
+
+    # Results from a training sample
+    original1 = target_data[0].reshape(par['out_img_shape'])
+    output1 = model_output[0].reshape(par['out_img_shape'])
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    # cv2.putText(original1,'Training',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+    # cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+
+    # Results from a testing sample
+    original2 = test_target[1].reshape(par['out_img_shape'])
+    output2 = test_output[1].reshape(par['out_img_shape'])
+    original3 = test_target[2].reshape(par['out_img_shape'])
+    output3 = test_output[2].reshape(par['out_img_shape'])
+    # cv2.putText(original2,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+    # cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+
+    vis1 = np.concatenate((original1, output1), axis=1)
+    vis2 = np.concatenate((original2, output2), axis=1)
+    vis3 = np.concatenate((original3, output3), axis=1)
+    vis = np.concatenate((vis1, vis2), axis=0)
+    vis = np.concatenate((vis, vis3), axis=0)
+    vis = copy.deepcopy(vis)
+    if par['normalize01']:
+        print("UN-NORMALIZE")
+        if np.max(vis) > 1 or np.min(vis) < 0:
+            print(np.max(vis))
+            print(np.min(vis))
+            print("Something is wrong")
+            quit()
+        vis *= 255
+        vis = np.int16(vis)
+
+    cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
+
 
 def eval_weights():
 
+    """ NEED TO FIX """
     with tf.variable_scope('encoder', reuse=True):
         W_in = tf.get_variable('W_in')
         b_enc = tf.get_variable('b_enc')
