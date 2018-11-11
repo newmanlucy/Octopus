@@ -32,7 +32,7 @@ class Model:
 
     def conv2d(self, x, W):
 
-        return tf.nn.conv2d(x, W, strides=[1,1,1,1], padding='SAME')
+        return tf.nn.relu(tf.nn.conv2d(x, W, strides=[1,1,1,1], padding='SAME'))
 
 
     def max_pool2d(self, x):
@@ -55,30 +55,63 @@ class Model:
                    'b_fc': tf.Variable(tf.random_normal([256])), 
                    'b_out': tf.Variable(tf.random_normal([par['n_output']]))}
 
+        # print("Original: ", par['inp_img_shape'])
+        # print("Input: ", self.input_data)
         x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],1])
-        # print(x.shape)
-        # quit()
+        # print("X: ", x.shape)
+        # print()
 
         # might need to consider relu
-        conv1 = self.conv2d(x, weights['W_conv1'])
-        conv1 = self.max_pool2d(conv1) + biases['b_conv1']
-        # print(conv1.shape)
-        # quit()
+        # conv1 = self.conv2d(x, weights['W_conv1'])
+        # print("Conv1: ", conv1.shape)
+        # conv1 = self.max_pool2d(conv1) + biases['b_conv1']
+        # print("Conv1: ", conv1.shape)
+        # print()
+        conv1    = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
+        conv2    = tf.layers.conv2d(inputs=maxpool1, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        maxpool2 = tf.layers.max_pooling2d(conv2, pool_size=(2,2), strides=(2,2), padding='same')
+        conv3    = tf.layers.conv2d(inputs=maxpool2, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
+        # print(conv1.shape, maxpool1.shape)
+        # print(conv2.shape, maxpool2.shape)
+        # print(conv3.shape, maxpool3.shape)
 
-        conv2 = self.conv2d(conv1, weights['W_conv2'])
-        conv2 = self.max_pool2d(conv2) + biases['b_conv2']
+        latent = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        conv4 = tf.layers.conv2d(inputs=latent, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # print(conv6.shape)
 
-        conv3 = self.conv2d(conv2, weights['W_conv3'])
-        conv3 = self.max_pool2d(conv3) + biases['b_conv3']
+        logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
+        # print(logits.shape)
+        self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
 
-        latent = tf.reshape(conv3, [par['batch_train_size'],conv3.shape[1]*conv3.shape[2]*conv3.shape[3]])
-        latent = tf.nn.relu(tf.matmul(latent, weights['W_fc']) + biases['b_fc'])
+        # conv2 = self.conv2d(conv1, weights['W_conv2'])
+        # print("Conv2: ", conv2.shape)
+        # conv2 = self.max_pool2d(conv2) + biases['b_conv2']
+        # print("Conv2: ", conv2.shape)
+        # print()
+
+
+        # conv3 = self.conv2d(conv2, weights['W_conv3'])
+        # print("Conv3: ", conv3.shape)
+        # conv3 = self.max_pool2d(conv3) + biases['b_conv3']
+        # print("Conv3: ", conv3.shape)
+        # print()
+
+        # latent = tf.reshape(conv3, [par['batch_train_size'],conv3.shape[1]*conv3.shape[2]*conv3.shape[3]])
+        # latent = tf.nn.relu(tf.matmul(latent, weights['W_fc']) + biases['b_fc'])
+        # print("Latent: ", latent)
 
         # print(latent.shape) #32 x 256
         # fc = tf.reshape(conv2, [-1,7,7,64])
         # fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
 
-        self.output = tf.matmul(latent, weights['W_out']) + biases['b_out']
+        # self.output = tf.matmul(latent, weights['W_out']) + biases['b_out']
+        # print("Output: ", self.output)
         
 
 
