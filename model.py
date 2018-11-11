@@ -185,7 +185,7 @@ def main(gpu_id = None):
         plt.close()
 
         for i in range(10):
-            idx = [i, i+10, i+20, i+30]
+            idx = [i, i+10, i+20]
             plot_testing(test_target[idx], test_output[idx], i)
 
 
