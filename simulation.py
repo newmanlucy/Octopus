@@ -62,7 +62,6 @@ def main(gpu_id = None):
     testing_losses = []
 
     tf.reset_default_graph()
-    imported_graph = tf.train.import_meta_graph('conv_model.meta')
     # graph = tf.Graph()
     config = tf.ConfigProto()
     with tf.Session(config=config) as sess:
@@ -81,6 +80,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
+            imported_graph = tf.train.import_meta_graph('conv_model.meta')
             imported_graph.restore(sess, tf.train.latest_checkpoint('./'))
             # saver.restore(sess, './conv_model')
             # imported_graph.restore(sess, './conv_model')
