@@ -46,7 +46,7 @@ updates = {
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 0,
+    'run_number'        : 2,
     "save_iter"         : 2000,
     'task'              : 'bw1_to_color'
 }

@@ -23,6 +23,8 @@ class Model:
         # Load input and target data
         self.input_data = input_data
         self.target_data = target_data
+        # self.o = tf.Variable(np.zeros(([par['batch_train_size'],par['n_output']])), name='o')
+        # self.l = tf.Variable(0.0, name='l')
 
         # Run model
         self.run_model()
@@ -54,11 +56,12 @@ class Model:
             self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
         else:
             self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-
+            self.o = tf.multiply(self.output, 1, name='o')
  
     def optimize(self):
         # Calculae loss
         self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
+        self.l = tf.multiply(self.loss, 1, name='l')
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
 
@@ -74,8 +77,8 @@ def main(gpu_id = None):
     stim = Stimulus()
 
     # Placeholders for the tensorflow model
-    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']])
-    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']])
+    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']], name='x')
+    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='y')
     
     # Model stats
     losses = []
@@ -124,8 +127,9 @@ def main(gpu_id = None):
                     weights = None
                     pickle.dump({'weights': weights, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
-                    # model.save('./conv_model.h5')
-                    saver.save(sess, './conv_model')
+                    
+                    saved_path = saver.save(sess, './conv_model')
+                    print('model saved in {}'.format(saved_path))
 
                 # Plot loss curve
                 if i > 0:
