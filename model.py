@@ -7,7 +7,7 @@ import tensorflow as tf
 import cv2
 import pickle
 import time
-import numpy as numpy
+import numpy as np
 import copy
 from stimulus import Stimulus
 import matplotlib.pyplot as plt
@@ -30,53 +30,17 @@ class Model:
         # Optimize
         self.optimize()
 
-
-    def conv2d(self, x, W):
-
-        return tf.nn.relu(tf.nn.conv2d(x, W, strides=[1,1,1,1], padding='SAME'))
-
-
-    def max_pool2d(self, x):
-
-        return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
-
  
     def run_model(self):
 
-        # 5x5 convolution with 1 inputs and 32 outputs
-        weights = {'W_conv1': tf.Variable(tf.random_normal([3,3,1,64])), #used to be 5,5
-                   'W_conv2': tf.Variable(tf.random_normal([3,3,64,128])), 
-                   'W_conv3': tf.Variable(tf.random_normal([3,3,128,256])),
-                   'W_fc': tf.Variable(tf.random_normal([16*16*256,256])), 
-                   'W_out': tf.Variable(tf.random_normal([256,par['n_output']]))}
-
-        biases = {'b_conv1': tf.Variable(tf.random_normal([64])), 
-                   'b_conv2': tf.Variable(tf.random_normal([128])), 
-                   'b_conv3': tf.Variable(tf.random_normal([256])),
-                   'b_fc': tf.Variable(tf.random_normal([256])), 
-                   'b_out': tf.Variable(tf.random_normal([par['n_output']]))}
-
-        # print("Original: ", par['inp_img_shape'])
-        # print("Input: ", self.input_data)
         x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],1])
-        # print("X: ", x.shape)
-        # print()
 
-        # might need to consider relu
-        # conv1 = self.conv2d(x, weights['W_conv1'])
-        # print("Conv1: ", conv1.shape)
-        # conv1 = self.max_pool2d(conv1) + biases['b_conv1']
-        # print("Conv1: ", conv1.shape)
-        # print()
         conv1    = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
         conv2    = tf.layers.conv2d(inputs=maxpool1, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         maxpool2 = tf.layers.max_pooling2d(conv2, pool_size=(2,2), strides=(2,2), padding='same')
         conv3    = tf.layers.conv2d(inputs=maxpool2, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
-        # print(conv1.shape, maxpool1.shape)
-        # print(conv2.shape, maxpool2.shape)
-        # print(conv3.shape, maxpool3.shape)
 
         latent = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv4 = tf.layers.conv2d(inputs=latent, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
@@ -84,10 +48,8 @@ class Model:
         conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        # print(conv6.shape)
 
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        # print(logits.shape)
         if par['normalize01']:
             self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
         else:
@@ -96,7 +58,6 @@ class Model:
  
     def optimize(self):
         # Calculae loss
-        # self.loss = tf.reduce_mean(tf.square(self.target_data - self.output))
         self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
@@ -129,6 +90,7 @@ def main(gpu_id = None):
         
         init = tf.global_variables_initializer()
         sess.run(init)
+        saver = tf.train.Saver()
 
         # Train the model
         start = time.time()
@@ -138,10 +100,6 @@ def main(gpu_id = None):
             input_data, target_data = stim.generate_train_batch()
             feed_dict = {x: input_data, y: target_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
-            
-            # if np.max(model_output) > 255 or np.min(model_output) <= 0:
-                # print("Input:", round(np.max(input_data),3), round(np.min(input_data),3))
-                # print("Output:", round(np.max(model_output),3), round(np.min(model_output),3))
 
             # Check current status
             if i % par['print_iter'] == 0:
@@ -166,7 +124,8 @@ def main(gpu_id = None):
                     weights = None
                     pickle.dump({'weights': weights, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
-
+                    # model.save('./conv_model.h5')
+                    saver.save(sess, './conv_model')
 
                 # Plot loss curve
                 if i > 0:
@@ -187,6 +146,8 @@ def main(gpu_id = None):
         for i in range(10):
             idx = [i, i+10, i+20]
             plot_testing(test_target[idx], test_output[idx], i)
+
+
 
 
 def plot_testing(test_target, test_output, i):
