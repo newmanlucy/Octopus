@@ -93,15 +93,16 @@ if __name__ == "__main__":
     try:
         updates = {
             'a_note'            : 'testing save and load model conv',
-            'input_dir'         : './bw_im2/',
-            'target_dir'        : './raw_im2/',
+            'input_dir'         : './bw_im/',
+            'target_dir'        : './raw_im/',
             'batch_train_size'  : 32,
             'learning_rate'     : 0.001,
             'normalize01'       : False,
             'num_layers'        : 3,
             'run_number'        : 2,
             "save_iter"         : 2000,
-            'task'              : 'bw1_to_color'
+            'task'              : 'bw1_to_color',
+            'simulation'	: True
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')

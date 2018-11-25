@@ -11,6 +11,7 @@ par = {
     'save_dir'          : './savedir/',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
+    'simulation'	: False,
     'img_size'          : 128,
 
     # Network shape
@@ -80,6 +81,9 @@ def update_dependencies():
         par['n_input'] = par['img_size']*par['img_size']
         par['n_output'] = par['n_input']*3
         par['save_dir'] = './savedir/bw1_to_color/'
+
+    if par['simulation']:
+        par['save_dir'] = './simulation/'
 
     # Set up initializers
     if par['num_layers'] == 5:
