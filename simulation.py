@@ -66,7 +66,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            imported_graph = tf.train.import_meta_graph('conv_model.meta')
+            imported_graph = tf.train.import_meta_graph('conv_model.meta', clear_devices=True)
             imported_graph.restore(sess, tf.train.latest_checkpoint('./'))            
             
         for i in range(10):
