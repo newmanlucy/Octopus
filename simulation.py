@@ -56,6 +56,7 @@ def main(gpu_id = None):
     stim = Stimulus()
     x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']])
     y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']])
+    print('Loaded Stimulus')
 
     # Model stats
     losses = []
@@ -63,18 +64,23 @@ def main(gpu_id = None):
 
     tf.reset_default_graph()
     config = tf.ConfigProto()
+    print('Reset tensor graph')
     with tf.Session(config=config) as sess:
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
+            print('Attempt to import graph')
             imported_graph = tf.train.import_meta_graph('conv_model.meta', clear_devices=True)
-            imported_graph.restore(sess, tf.train.latest_checkpoint('./'))            
+            imported_graph.restore(sess, tf.train.latest_checkpoint('./')) 
+            print('Imported graph')           
             
         for i in range(10):
             
             # Generate batch from testing set and check the output
+            print('Generate data')
             test_input, test_target = stim.generate_test_batch()
             feed_dict = {'x:0': test_input, 'y:0': test_target}
+            print('Start run')
             test_loss, test_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
             print("FINAL TEST LOSS IS: ", test_loss)
             plot_testing(test_target, test_output, i)
