@@ -62,6 +62,7 @@ class Model:
         self.l = tf.multiply(self.loss, 1, name='l')
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
+
 class EvoModel:
 
     def __init__(self, input_data, target_data):

@@ -17,51 +17,12 @@ from parameters import *
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-class Model:
 
-    def __init__(self, input_data, target_data):
-        # Load input and target data
-        self.input_data = input_data
-        self.target_data = target_data
-
-        # Run model
-        self.run_model()
-
-        # Optimize
-        self.optimize()
-
- 
-    def run_model(self):
-
-        x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],1])
-
-        conv1    = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
-        conv2    = tf.layers.conv2d(inputs=maxpool1, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool2 = tf.layers.max_pooling2d(conv2, pool_size=(2,2), strides=(2,2), padding='same')
-        conv3    = tf.layers.conv2d(inputs=maxpool2, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
-
-        latent = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv4 = tf.layers.conv2d(inputs=latent, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-
-        logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        if par['normalize01']:
-            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-        else:
-            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-            self.o = tf.multiply(self.output, 1, name='o')
- 
-    def optimize(self):
-        # Calculae loss
-        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.l = tf.multiply(self.loss, 1, name='l')
-        self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
-
+"""
+The plan right now is to load up a convolutional model that is trained 
+to solve bw1 to bw3 and then use the output of the convolutional model
+to train EvoModel through evolutionary algorithm
+"""
 class EvoModel:
 
     def __init__(self, input_data, target_data):
@@ -98,13 +59,11 @@ class EvoModel:
         if par['normalize01']:
             self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
         else:
-            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-            self.o = tf.multiply(self.output, 1, name='o')
+            self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='evo_o')
  
     def optimize(self):
         # Calculae loss
-        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.l = tf.multiply(self.loss, 1, name='l')
+        self.loss = tf.multiply(tf.losses.mean_squared_error(self.target_data, self.output), 1, name='evo_l')
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
 
 
@@ -120,8 +79,6 @@ def main(gpu_id = None):
     stim = Stimulus()
 
     # Placeholders for the tensorflow model
-    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']], name='x')
-    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='y')
     evo_x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='evo_x')
     evo_y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='evo_y')
 
@@ -132,64 +89,26 @@ def main(gpu_id = None):
     config = tf.ConfigProto()
     with tf.Session(config=config) as sess:
 
-        device = '/cpu:0' if gpu_id is None else '/gpu:0'
-        with tf.device(device):
-            model = Model(x,y)
-            evo_model = EvoModel(evo_x,evo_y)
-        
         init = tf.global_variables_initializer()
         sess.run(init)
-        saver = tf.train.Saver()
+
+        device = '/cpu:0' if gpu_id is None else '/gpu:0'
+        with tf.device(device):
+            conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
+            conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
+
 
         # Train the model
         start = time.time()
-        # for i in range(par['num_iterations']):
-
-        #     # Generate training set
-        #     input_data, target_data, _ = stim.generate_train_batch()
-        #     feed_dict = {x: input_data, y: target_data}
-        #     _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
-
-        #     # Check current status
-        #     if i % par['print_iter'] == 0:
-
-        #         # Print current status
-        #         print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-        #             par['run_number'], par['task'], i, train_loss, time.time()-start))
-        #         losses.append(train_loss)
-
-        #         # Save one training and output img from this iteration
-        #         if i % par['save_iter'] == 0:
-
-        #             # Generate batch from testing set and check the output
-        #             test_input, test_target, _ = stim.generate_test_batch()
-        #             feed_dict = {x: test_input, y: test_target}
-        #             test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
-        #             testing_losses.append(test_loss)
-
-        #             plot_outputs(target_data, model_output, test_target, test_output, i)
-
-        #             # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-        #                 # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
-                    
-        #             # saved_path = saver.save(sess, './evo_model')
-        #             # print('model saved in {}'.format(saved_path))
-
-        #         # Plot loss curve
-        #         if i > 0:
-        #             plt.plot(losses[1:])
-        #             plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
-        #             plt.close()
-
         for i in range(par['num_iterations']):
 
             # Generate training set
             input_data, conv_target, evo_target = stim.generate_train_batch()
-            feed_dict = {x: input_data, y: conv_target}
-            conv_loss, conv_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+            feed_dict = {'x:0': input_data, 'y:0': conv_target}
+            conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
-            feed_dict = {evo_x: conv_output, evo_y: evo_target}
-            evo_loss, model_output = sess.run([evo_model.loss, evo_model.output], feed_dict=feed_dict)
+            # "TRAIN" EVO MODEL
+            # evo_loss, model_output = run_evo_model
 
             # Check current status
             if i % par['print_iter'] == 0:
@@ -204,20 +123,19 @@ def main(gpu_id = None):
 
                     # Generate batch from testing set and check the output
                     test_input, test_target, test_target2 = stim.generate_test_batch()
-                    feed_dict = {x: test_input, y: conv_target}
-                    test_loss, conv_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+                    feed_dict = {'x:0': test_input, 'y:0': conv_target}
+                    test_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
-                    feed_dict = {evo_x: conv_output, evo_y: evo_target}
-                    test_loss, evo_output = sess.run([evo_model.loss, evo_model.output], feed_dict=feed_dict)
-                    testing_losses.append(test_loss)
+                    # "TEST" EVO MODEL
+                    # test_loss, evo_output = run_evo_network
+                    # testing_losses.append(test_loss)
 
                     plot_outputs(test_target, conv_output, test_target2, evo_output, i)
 
-                    # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                    pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                     
-                    # saved_path = saver.save(sess, './evo_model')
-                    # print('model saved in {}'.format(saved_path))
+                    # FIGURE OUT HOW TO SAVE EVO MODEL
 
                 # Plot loss curve
                 if i > 0:
@@ -227,7 +145,7 @@ def main(gpu_id = None):
 
 
             
-        # Generate batch from testing set and check the output
+        # Test the model
         # test_input, test_target = stim.generate_test_batch()
         # feed_dict = {x: test_input, y: test_target}
         # test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
