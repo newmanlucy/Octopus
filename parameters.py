@@ -115,7 +115,8 @@ def update_dependencies():
         par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
     
     elif par['num_layers'] == 3:
-        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
+        # par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
+        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input']*3, par['n_enc']]))
         par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
 
         par['W_enc_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_latent']]))
