@@ -39,16 +39,16 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'testing save and load model conv',
+    'a_note'            : 'testing bw to bw conv',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'batch_train_size'  : 32,
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 2,
-    "save_iter"         : 2000,
-    'task'              : 'bw1_to_color'
+    'run_number'        : 0,
+    "save_iter"         : 10,
+    'task'              : 'conv_task'
 }
 try_model(updates)
 

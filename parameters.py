@@ -36,7 +36,7 @@ par = {
     # Training setup
     'batch_train_size'  : 100,
     'num_iterations'    : 30001,
-    'print_iter'        : 1000,
+    'print_iter'        : 10,
     'save_iter'         : 2000
 }
 
@@ -49,10 +49,10 @@ def update_dependencies():
     if par['task'] == 'bw_to_bw':
         par['input_dir'] = './bw_im'
         par['target_dir'] = './bw_im'
-        par['inp_img_shape'] = (par['img_size'],par['img_size'],3)
+        par['inp_img_shape'] = (par['img_size'],par['img_size'])    # used to be (par['img_size'],par['img_size'],3)
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
-        par['n_input'] = par['img_size']*par['img_size']*3
-        par['n_output'] = par['n_input']
+        par['n_input'] = par['img_size']*par['img_size'] #par['img_size']*par['img_size']*3
+        par['n_output'] = par['n_input']*3 # par['n_input']
         par['save_dir'] = './savedir/bw_to_bw/'
 
     elif par['task'] == 'bw_to_bw_simple':
@@ -81,6 +81,15 @@ def update_dependencies():
         par['n_input'] = par['img_size']*par['img_size']
         par['n_output'] = par['n_input']*3
         par['save_dir'] = './savedir/bw1_to_color/'
+
+    elif par['task'] == 'conv_task':
+        par['input_dir'] = './bw_im/'
+        par['target_dir'] = './raw_im/'
+        par['inp_img_shape'] = (par['img_size'],par['img_size'])
+        par['out_img_shape'] = (par['img_size'],par['img_size'],3)
+        par['n_input'] = par['img_size']*par['img_size']
+        par['n_output'] = par['n_input']*3
+        par['save_dir'] = './savedir/conv_task/'
 
     if par['simulation']:
         par['save_dir'] = './simulation/'
