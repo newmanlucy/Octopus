@@ -86,7 +86,7 @@ def convolve(x, var_dict, filt_type):
     filt_shape = var_dict[filters[0]].shape
 
     if filt_type == 'conv1_filter':
-        conv = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],64))
+        conv = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
     else:
         conv = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
     

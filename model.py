@@ -33,7 +33,7 @@ class EvoModel:
  
     def make_variables(self):
         var_names = ['conv1_bias','conv2_bias','b_out']
-        for i in range(64):
+        for i in range(par['num_conv1_filters']):
             var_names.append('conv1_filter{}'.format(i))
         for i in range(3):
             var_names.append('conv2_filter{}'.format(i))

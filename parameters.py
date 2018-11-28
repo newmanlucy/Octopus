@@ -104,11 +104,11 @@ def update_dependencies():
         par['save_dir'] = './simulation/'
 
     # Set up initializers
-    for i in range(64):
+    for i in range(par['num_conv1_filters']):
         par['conv1_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3,3)
     for i in range(3):
-        par['conv2_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3,64)
-    par['conv1_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],64)
+        par['conv2_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
+    par['conv1_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
     par['conv2_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3)
     par['b_out_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['n_output'])
     par['num_survivors'] = int(par['n_networks'] * par['survival_rate'])
