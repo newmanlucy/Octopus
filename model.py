@@ -65,10 +65,10 @@ class EvoModel:
         # conv2 = tf.layers.conv2d(inputs=conv1, filters=3, kernel_size=(3,3), padding='same', activation=None)
         # self.output = tf.nn.relu(tf.reshape(conv2, [par['batch_train_size'],par['n_output']]))
         
-        x = cp.reshape(self.input_data, (par['batch_train_size'],*par['inp_img_shape'],3))
-        conv1 = cp.zeros((par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],64))
-        conv2 = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
-        self.output = relu(np.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])))#cp.zeros((par['n_networks'], par['batch_train_size'],par['n_output']))
+        x = cp.reshape([self.input_data]*par['n_networks'], (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
+        conv1 = convolve(x, self.var_dict, 'conv1_filter') + self.var_dict['conv1_bias']
+        conv2 = convolve(conv1, self.var_dict, 'conv2_filter') + self.var_dict['conv2_bias']
+        self.output = relu(np.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))) + self.var_dict['b_out']
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
@@ -104,6 +104,7 @@ def main(gpu_id = None):
 
     if gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        gpu_id = None
 
     # Reset Tensorflow graph
     tf.reset_default_graph()
