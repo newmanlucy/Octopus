@@ -53,7 +53,8 @@ def softmax(x, a=-1):
     return c/cp.sum(c, axis=a, keepdims=True).astype(cp.float32)
 
 def pad(x):
-    temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,3))
+    shape = x.shape
+    temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,shape[-1]))
     temp[:,:,1:129,1:129,:] = x
 
     temp[:,:,0,0,:]         = x[:,:,0,0,:]
