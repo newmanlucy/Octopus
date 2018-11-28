@@ -11,7 +11,7 @@ par = {
     'save_dir'          : './savedir/',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'simulation'	: False,
+    'simulation'	    : False,
     'img_size'          : 128,
 
     # Network shape
@@ -21,6 +21,14 @@ par = {
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
+
+    # Evolutionary
+    'n_networks'        : 11,
+    'survival_rate'     : 0.1,
+    'mutation_rate'     : 0.1,
+    'mutation_strength' : 0.20,
+    'cross_rate'        : 0,
+    'use_crossing'      : False,
     
     # Training
     'task'              : 'bw_to_bw_simple',
@@ -95,48 +103,14 @@ def update_dependencies():
         par['save_dir'] = './simulation/'
 
     # Set up initializers
-    if par['num_layers'] == 5:
-        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
-        par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
-
-        par['W_enc_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_link']]))
-        par['b_latent_init'] = np.float32(np.random.normal(size=(1,par['n_link'])))
-
-        par['W_link_init'] = np.float32(np.random.normal(size=[par['n_link'], par['n_latent']]))
-        par['b_link_init'] = np.float32(np.random.normal(size=(1,par['n_latent'])))
-        
-        par['W_dec_init'] = np.float32(np.random.normal(size = [par['n_latent'], par['n_link']]))
-        par['b_dec_init'] = np.float32(np.random.normal(size=(1,par['n_link'])))
-
-        par['W_link2_init'] = np.float32(np.random.normal(size=[par['n_link'], par['n_dec']]))
-        par['b_link2_init'] = np.float32(np.random.normal(size=(1,par['n_dec'])))
-
-        par['W_out_init'] = np.float32(np.random.normal(size=[par['n_dec'], par['n_output']]))
-        par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
-    
-    elif par['num_layers'] == 3:
-        # par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
-        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input']*3+32*32*256, par['n_enc']]))
-        par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
-
-        par['W_enc_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_latent']]))
-        par['b_latent_init'] = np.float32(np.random.normal(size=(1,par['n_latent'])))
-        
-        par['W_dec_init'] = np.float32(np.random.normal(size=[par['n_latent'], par['n_dec']]))
-        par['b_dec_init'] = np.float32(np.random.normal(size=(1,par['n_dec'])))
-
-        par['W_out_init'] = np.float32(np.random.normal(size=[par['n_dec'], par['n_output']]))
-        par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
-    
-    elif par['num_layers'] == 2:
-        par['W_in_init'] = np.float32(np.random.normal(size=[par['n_input'], par['n_enc']]))
-        par['b_enc_init'] = np.float32(np.random.normal(size=(1,par['n_enc'])))
-
-        par['W_dec_init'] = np.float32(np.random.normal(size=[par['n_enc'], par['n_dec']]))
-        par['b_dec_init'] = np.float32(np.random.normal(size=(1,par['n_dec'])))
-
-        par['W_out_init'] = np.float32(np.random.normal(size=[par['n_dec'], par['n_output']]))
-        par['b_out_init'] = np.float32(np.random.normal(size=(1,par['n_output'])))
+    for i in range(64):
+        par['conv1_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3)
+    for i in range(3):
+        par['conv2_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3)
+    par['conv1_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],64)
+    par['conv2_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3)
+    par['b_out_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['n_output'])
+    par['num_survivors'] = int(par['n_networks'] * par['survival_rate'])
 
 """
 Update parameters based on the given dictionary (updates)
