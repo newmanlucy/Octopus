@@ -21,7 +21,7 @@ par = {
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
-    'num_conv1_filters' : 64,
+    'num_conv1_filters' : 32,
 
     # Evolutionary
     'n_networks'        : 100,
@@ -108,9 +108,9 @@ def update_dependencies():
         par['conv1_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3,3)
     for i in range(3):
         par['conv2_filter{}_init'.format(i)] = np.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
-    par['conv1_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
-    par['conv2_bias_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3)
-    par['b_out_init'] = np.random.rand(par['n_networks'], par['batch_train_size'],par['n_output'])
+    par['conv1_bias_init'] = np.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
+    par['conv2_bias_init'] = np.random.rand(par['n_networks'],*par['inp_img_shape'],3)
+    par['b_out_init'] = np.random.rand(par['n_networks'],par['n_output'])
     par['num_survivors'] = int(par['n_networks'] * par['survival_rate'])
 
 """

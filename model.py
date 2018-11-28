@@ -135,7 +135,7 @@ def main(gpu_id = None):
 
             # Generate training set
             input_data, conv_target, evo_target = stim.generate_train_batch()
-            conv_output = conv_target
+            conv_output = np.array(conv_target)
             # feed_dict = {'x:0': input_data, 'y:0': conv_target}
             # conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
