@@ -51,6 +51,8 @@ def softmax(x, a=-1):
     c = cp.exp(x-cp.amax(x, axis=a, keepdims=True))
     return c/cp.sum(c, axis=a, keepdims=True).astype(cp.float32)
 
+def convolve():
+    
 
 ### Judgement functions
 

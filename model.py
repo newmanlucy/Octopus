@@ -68,14 +68,14 @@ class EvoModel:
         x = cp.reshape(self.input_data, (par['batch_train_size'],*par['inp_img_shape'],3))
         conv1 = cp.zeros((par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],64))
         conv2 = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
-        self.output = relu(np.reshape(conv2, (par['batch_train_size'],par['n_output']))#cp.zeros((par['n_networks'], par['batch_train_size'],par['n_output']))
+        self.output = relu(np.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])))#cp.zeros((par['n_networks'], par['batch_train_size'],par['n_output']))
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
         # output: (net, 32, 49152)
  
     def judge_models(self):
-        self.loss = cp.mean(cp.square(self.target_data - self.output))
+        self.loss = cp.mean(cp.square(self.target_data - self.output),axis=(1,2))
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
@@ -103,7 +103,7 @@ class EvoModel:
 def main(gpu_id = None):
 
     if gpu_id is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     # Reset Tensorflow graph
     tf.reset_default_graph()
