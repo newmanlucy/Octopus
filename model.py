@@ -123,10 +123,10 @@ def main(gpu_id = None):
         init = tf.global_variables_initializer()
         sess.run(init)
 
-        device = '/cpu:0' if gpu_id is None else '/gpu:0'
-        with tf.device(device):
-            conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
+        # device = '/cpu:0' if gpu_id is None else '/gpu:0'
+        # with tf.device(device):
+            # conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
+            # conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
 
 
         # Train the model
@@ -135,8 +135,9 @@ def main(gpu_id = None):
 
             # Generate training set
             input_data, conv_target, evo_target = stim.generate_train_batch()
-            feed_dict = {'x:0': input_data, 'y:0': conv_target}
-            conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
+            conv_output = conv_target
+            # feed_dict = {'x:0': input_data, 'y:0': conv_target}
+            # conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
             # "TRAIN" EVO MODEL
             # if conv_loss < 500:

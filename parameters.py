@@ -21,7 +21,7 @@ par = {
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
-    'num_conv1_filters' : 32,
+    'num_conv1_filters' : 64,
 
     # Evolutionary
     'n_networks'        : 100,
