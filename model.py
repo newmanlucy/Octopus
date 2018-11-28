@@ -117,7 +117,7 @@ def main(gpu_id = None):
     losses = []
     testing_losses = []
 
-    config = tf.ConfigProto()
+    config = tf.ConfigProto(allow_soft_placement=True)
     with tf.Session(config=config) as sess:
 
         init = tf.global_variables_initializer()
