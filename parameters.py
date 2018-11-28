@@ -21,9 +21,10 @@ par = {
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
+    'num_conv1_filters' : 32,
 
     # Evolutionary
-    'n_networks'        : 11,
+    'n_networks'        : 100,
     'survival_rate'     : 0.1,
     'mutation_rate'     : 0.1,
     'mutation_strength' : 0.20,
