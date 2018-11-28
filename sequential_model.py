@@ -81,25 +81,28 @@ class EvoModel:
  
     def run_model(self):
 
-        with tf.variable_scope('encoder'):
-            self.W_in = tf.get_variable('W_in', initializer=par['W_in_init'], trainable=True)
-            self.b_enc = tf.get_variable('b_enc', initializer=par['b_enc_init'], trainable=True)
-            self.W_enc = tf.get_variable('W_enc', initializer=par['W_enc_init'], trainable=True)
-            self.b_latent = tf.get_variable('b_latent', initializer=par['b_latent_init'], trainable=True)
+        x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],3])
 
-        with tf.variable_scope('decoder'):
-            self.W_dec = tf.get_variable('W_dec', initializer=par['W_dec_init'], trainable=True)
-            self.b_dec = tf.get_variable('b_dec', initializer=par['b_dec_init'], trainable=True)
-            self.W_out = tf.get_variable('W_out', initializer=par['W_out_init'], trainable=True)
-            self.b_out = tf.get_variable('b_out', initializer=par['b_out_init'], trainable=True)
+        conv1    = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
+        # conv2    = tf.layers.conv2d(inputs=maxpool1, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # maxpool2 = tf.layers.max_pooling2d(conv2, pool_size=(2,2), strides=(2,2), padding='same')
+        # conv3    = tf.layers.conv2d(inputs=maxpool2, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
 
-        # print(self.input_data.shape)
-        # print(self.encoded_data.shape)
-        all_input = tf.concat([self.input_data, self.encoded_data], axis=1)
-        self.enc = tf.nn.sigmoid(tf.add(tf.matmul(all_input, self.W_in), self.b_enc))
-        self.latent = tf.nn.sigmoid(tf.add(tf.matmul(self.enc, self.W_enc), self.b_latent))
-        self.dec = tf.nn.sigmoid(tf.add(tf.matmul(self.latent, self.W_dec), self.b_dec))
-        self.output = tf.nn.relu(tf.add(tf.matmul(self.dec, self.W_out), self.b_out))
+        # latent = tf.image.resize_images(maxpool1, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        # conv4 = tf.layers.conv2d(inputs=latent, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        # conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        # upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        # conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+
+        logits = tf.layers.conv2d(inputs=conv1, filters=3, kernel_size=(3,3), padding='same', activation=None)
+        if par['normalize01']:
+            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+        else:
+            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+            self.o = tf.multiply(self.output, 1, name='o')
  
     def optimize(self):
         # Calculae loss
@@ -151,11 +154,11 @@ def main(gpu_id = None):
             _, latent, conv_loss, conv_output = sess.run([model.train_op, model.latent, model.loss, model.output], feed_dict=feed_dict)
 
             feed_dict = {evo_x: conv_output, evo_y: evo_target, evo_latent: latent.astype(np.float32)}
-            # if conv_loss < 500:
-            _, evo_loss, model_output = sess.run([evo_model.train_op, evo_model.loss, evo_model.output], feed_dict=feed_dict)
-            # else:
-                # evo_loss = 0
-                # model_output = conv_output
+            if conv_loss < 500:
+                _, evo_loss, model_output = sess.run([evo_model.train_op, evo_model.loss, evo_model.output], feed_dict=feed_dict)
+            else:
+                evo_loss = 0
+                model_output = conv_output
 
             # Check current status
             if i % par['print_iter'] == 0:

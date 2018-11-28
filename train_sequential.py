@@ -46,7 +46,7 @@ updates = {
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 1,
+    'run_number'        : 4,
     'save_iter'         : 10,
     'task'              : 'conv_task'
 }
