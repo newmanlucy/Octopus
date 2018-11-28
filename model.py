@@ -67,15 +67,15 @@ class EvoModel:
         
         x = cp.reshape(self.input_data, (par['batch_train_size'],*par['inp_img_shape'],3))
         conv1 = cp.zeros((par['n_networks'], par['batch_train_size'],par['inp_img_shape'][0],par['inp_img_shape'][1],64))
-        conv1 = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
-        self.output = cp.zeros((par['n_networks'], par['batch_train_size'],par['n_output']))
+        conv2 = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
+        self.output = relu(np.reshape(conv2, (par['batch_train_size'],par['n_output']))#cp.zeros((par['n_networks'], par['batch_train_size'],par['n_output']))
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
         # output: (net, 32, 49152)
  
     def judge_models(self):
-        self.loss = cp.zeros((par['n_networks'])) #cp.mean(cp.square(self.target_data - self.output))
+        self.loss = cp.mean(cp.square(self.target_data - self.output))
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
@@ -172,7 +172,7 @@ def main(gpu_id = None):
                     test_loss = evo_model.get_losses(True)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(test_target, conv_output, test_target2, evo_output, i)
+                    plot_outputs(test_target, conv_output, test_target2, evo_output[0], i)
 
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
