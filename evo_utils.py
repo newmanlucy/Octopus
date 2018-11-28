@@ -83,6 +83,8 @@ def convolve(x, var_dict, filt_type):
             filters.append(key)
 
     input_shape = x.shape
+    if len(input_shape) == 4:
+        x = cp.expand_dims(x,axis=0)
     filt_shape = var_dict[filters[0]].shape
 
     if filt_type == 'conv1_filter':
