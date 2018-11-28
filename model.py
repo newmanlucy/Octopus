@@ -13,6 +13,7 @@ from stimulus import Stimulus
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from parameters import *
+from evo_utils import *
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -41,25 +42,13 @@ class EvoModel:
 
         x = tf.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],3])
 
-        conv1    = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
-        conv2    = tf.layers.conv2d(inputs=maxpool1, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool2 = tf.layers.max_pooling2d(conv2, pool_size=(2,2), strides=(2,2), padding='same')
-        conv3    = tf.layers.conv2d(inputs=maxpool2, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
-
-        latent = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv4 = tf.layers.conv2d(inputs=latent, filters=256, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-
-        logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        if par['normalize01']:
-            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-        else:
-            self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='evo_o')
+        # maxpool1 = tf.layers.max_pooling2d(conv1, pool_size=(2,2), strides=(2,2), padding='same')
+        conv1  = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        conv2 = tf.layers.conv2d(inputs=conv1, filters=3, kernel_size=(3,3), padding='same', activation=None)
+        self.output = tf.nn.relu(tf.reshape(conv2, [par['batch_train_size'],par['n_output']]))
+        # x:      (32, 128, 128, 3)
+        # conv1:  (32, 128, 128, 64)
+        # output: (32, 49152)
  
     def optimize(self):
         # Calculae loss
