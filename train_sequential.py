@@ -39,14 +39,14 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'testing conv + feedforward',
+    'a_note'            : 'testing conv + evo',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'batch_train_size'  : 32,
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 4,
+    'run_number'        : 5,
     'save_iter'         : 10,
     'task'              : 'conv_task'
 }
