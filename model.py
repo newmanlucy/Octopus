@@ -70,7 +70,6 @@ class EvoModel:
  
     def judge_models(self):
         self.loss = cp.mean(cp.square(self.target_data - self.output),axis=(1,2))
-        print(self.loss.shape)
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
@@ -131,6 +130,7 @@ def main(gpu_id = None):
             # Generate training set
             input_data, conv_target, evo_target = stim.generate_train_batch()
             conv_output = np.array(conv_target)
+            conv_loss = 0
             # feed_dict = {'x:0': input_data, 'y:0': conv_target}
             # conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
@@ -156,12 +156,14 @@ def main(gpu_id = None):
                 if i % par['save_iter'] == 0:
 
                     # Generate batch from testing set and check the output
-                    test_input, test_target, test_target2 = stim.generate_test_batch()
-                    feed_dict = {'x:0': test_input, 'y:0': conv_target}
-                    test_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
+                    input_data, conv_target, evo_target = stim.generate_test_batch()
+                    conv_output = np.array(conv_target)
+                    conv_loss = 0
+                    # feed_dict = {'x:0': test_input, 'y:0': conv_target}
+                    # test_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
                     # "TEST" EVO MODEL
-                    evo_model.load_batch(conv_output, test_target2)
+                    evo_model.load_batch(conv_output, evo_target)
                     evo_model.run_models()
                     evo_model.judge_models()
 
@@ -169,7 +171,7 @@ def main(gpu_id = None):
                     test_loss = evo_model.get_losses(True)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(test_target, conv_output, test_target2, evo_output[0], i)
+                    plot_outputs(test_target, conv_output, evo_target, evo_output[0], i)
 
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
