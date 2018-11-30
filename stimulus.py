@@ -9,7 +9,7 @@ class Stimulus:
 
         # Get files from img_dir
         files = os.listdir(par['input_dir'])
-        files = files[np.random.choice(np.arange(len(files)),size=2000)]
+        files = np.array(files)[np.random.choice(np.arange(len(files)),size=2000)]
         for f in files:
             if 'clean' not in f:
                 files.remove(f)

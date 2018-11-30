@@ -13,6 +13,7 @@ from stimulus import Stimulus
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from parameters import *
+from evo_utils import *
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -89,9 +90,9 @@ class EvoModel:
         for i in range(3):
             self.var_dict['conv2_filter{}'] = cp.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
 
-        self.var_dict['conv1_bias'] = np.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
-        self.var_dict['conv2_bias'] = np.random.rand(par['n_networks'],*par['inp_img_shape'],3)
-        self.var_dict['b_out'] = np.random.rand(par['n_networks'],par['n_output'])
+        self.var_dict['conv1_bias'] = cp.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
+        self.var_dict['conv2_bias'] = cp.random.rand(par['n_networks'],*par['inp_img_shape'],3)
+        self.var_dict['b_out'] = cp.random.rand(par['n_networks'],par['n_output'])
 
 
     def make_constants(self):
@@ -110,10 +111,10 @@ class EvoModel:
 
     def run_models(self):
 
-        x = cp.reshape([self.input_data]*par['n_networks'], (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
+        x = cp.reshape(cp.array([self.input_data]*par['n_networks']), (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
         conv1 = convolve(x, self.var_dict, 'conv1_filter') + self.var_dict['conv1_bias']
         conv2 = convolve(conv1, self.var_dict, 'conv2_filter') + self.var_dict['conv2_bias']
-        self.output = relu(np.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))) + self.var_dict['b_out']
+        self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))) + self.var_dict['b_out']
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
