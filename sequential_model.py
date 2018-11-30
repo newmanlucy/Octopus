@@ -73,16 +73,26 @@ class EvoModel:
         self.make_variables()
  
     def make_variables(self):
-        var_names = ['conv1_bias','conv2_bias','b_out']
-        for i in range(par['num_conv1_filters']):
-            var_names.append('conv1_filter{}'.format(i))
-        for i in range(3):
-            var_names.append('conv2_filter{}'.format(i))
+        # var_names = ['conv1_bias','conv2_bias','b_out']
+        # for i in range(par['num_conv1_filters']):
+        #     var_names.append('conv1_filter{}'.format(i))
+        # for i in range(3):
+        #     var_names.append('conv2_filter{}'.format(i))
 
+        # self.var_dict = {}
+        # for v in var_names:
+            # self.var_dict[v] = to_gpu(par[v+'_init'])
 
         self.var_dict = {}
-        for v in var_names:
-            self.var_dict[v] = to_gpu(par[v+'_init'])
+        for i in range(par['num_conv1_filters']):
+            self.var_dict['conv1_filter{}'] = cp.random.rand(par['n_networks'],3,3,3)
+        for i in range(3):
+            self.var_dict['conv2_filter{}'] = cp.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
+
+        self.var_dict['conv1_bias'] = np.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
+        self.var_dict['conv2_bias'] = np.random.rand(par['n_networks'],*par['inp_img_shape'],3)
+        self.var_dict['b_out'] = np.random.rand(par['n_networks'],par['n_output'])
+
 
     def make_constants(self):
         constants = ['n_networks','mutation_rate','mutation_strength','cross_rate']
@@ -100,12 +110,6 @@ class EvoModel:
 
     def run_models(self):
 
-        # Add n_networks dimension
-        # x = cp.reshape(self.input_data, shape=[par['batch_train_size'],*par['inp_img_shape'],3])
-        # conv1  = tf.layers.conv2d(inputs=x, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
-        # conv2 = tf.layers.conv2d(inputs=conv1, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        # self.output = tf.nn.relu(tf.reshape(conv2, [par['batch_train_size'],par['n_output']]))
-        
         x = cp.reshape([self.input_data]*par['n_networks'], (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
         conv1 = convolve(x, self.var_dict, 'conv1_filter') + self.var_dict['conv1_bias']
         conv2 = convolve(conv1, self.var_dict, 'conv2_filter') + self.var_dict['conv2_bias']
@@ -117,6 +121,7 @@ class EvoModel:
  
     def judge_models(self):
         self.loss = cp.mean(cp.square(self.target_data - self.output),axis=(1,2))
+        print(self.loss.shape)
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
@@ -145,6 +150,7 @@ def main(gpu_id = None):
 
     if gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     # Reset Tensorflow graph
     tf.reset_default_graph()
@@ -160,7 +166,7 @@ def main(gpu_id = None):
     losses = []
     testing_losses = []
 
-    config = tf.ConfigProto()
+    config = tf.ConfigProto(allow_soft_placement=True)
     with tf.Session(config=config) as sess:
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
@@ -203,19 +209,18 @@ def main(gpu_id = None):
                 if i % par['save_iter'] == 0:
 
                     # Generate batch from testing set and check the output
-                    test_input, test_target, test_target2 = stim.generate_test_batch()
-                    feed_dict = {x: test_input, y: conv_target}
-                    test_latent, test_loss, conv_output = sess.run([model.latent, model.loss, model.output], feed_dict=feed_dict)
+                    input_data, conv_target, evo_target = stim.generate_test_batch()
+                    feed_dict = {x: input_data, y: conv_target}
+                    latent, conv_loss, conv_output = sess.run([model.latent, model.loss, model.output], feed_dict=feed_dict)
 
-                    evo_model.load_batch(conv_output, test_target2)
+                    evo_model.load_batch(conv_output, evo_target)
                     evo_model.run_models()
                     evo_model.judge_models()
 
-                    evo_output = evo_model.output
                     test_loss = evo_model.get_losses(True)
                     testing_losses.append(test_loss[0])
 
-                    plot_outputs(test_target, conv_output, test_target2, evo_output[0], i)
+                    plot_outputs(conv_target, conv_output, evo_target, evo_model.output[0], i)
 
                     # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
