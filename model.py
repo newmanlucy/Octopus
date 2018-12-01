@@ -34,13 +34,13 @@ class EvoModel:
     def make_variables(self):
         self.var_dict = {}
         for i in range(par['num_conv1_filters']):
-            self.var_dict['conv1_filter{}'] = cp.random.rand(par['n_networks'],3,3,3)
+            self.var_dict['conv1_filter{}'] = cp.random.normal(size=(par['n_networks'],3,3,3))
         for i in range(3):
-            self.var_dict['conv2_filter{}'] = cp.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
+            self.var_dict['conv2_filter{}'] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters']))
 
-        self.var_dict['conv1_bias'] = cp.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
-        self.var_dict['conv2_bias'] = cp.random.rand(par['n_networks'],*par['inp_img_shape'],3)
-        self.var_dict['b_out'] = cp.random.rand(par['n_networks'],par['n_output'])
+        self.var_dict['conv1_bias'] = cp.random.normal(size=(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters']))
+        self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3))
+        self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output']))
 
 
     def make_constants(self):
@@ -60,9 +60,9 @@ class EvoModel:
     def run_models(self):
 
         x = cp.reshape(cp.repeat(cp.expand_dims(self.input_data,axis=0),par['n_networks'],axis=0), (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
-        conv1 = convolve(x, self.var_dict, 'conv1_filter') + cp.expand_dims(self.var_dict['conv1_bias'],axis=1)
-        conv2 = convolve(conv1, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1)
-        self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))) + cp.expand_dims(self.var_dict['b_out'],axis=1)
+        conv1 = relu(convolve(x, self.var_dict, 'conv1_filter') + cp.expand_dims(self.var_dict['conv1_bias'],axis=1))
+        conv2 = relu(convolve(conv1, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
+        self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])) + cp.expand_dims(self.var_dict['b_out'],axis=1))
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
@@ -148,8 +148,8 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0], time.time()-start))
+                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:5], time.time()-start))
                 losses.append(evo_loss)
 
                 # Save one training and output img from this iteration

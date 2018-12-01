@@ -42,14 +42,14 @@ updates = {
     'a_note'            : 'debugging evo_model',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'batch_train_size'  : 32,
+    'batch_train_size'  : 28,
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
-    'run_number'        : 5,
+    'run_number'        : 7,
     "save_iter"         : 100,
     'print_iter'        : 10,
-    'n_networks'        : 10,
+    'n_networks'        : 40,
     'num_conv1_filters' : 16,
     'task'              : 'conv_task'
 }
