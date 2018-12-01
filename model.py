@@ -69,7 +69,7 @@ class EvoModel:
         # output: (net, 32, 49152)
  
     def judge_models(self):
-        self.loss = cp.mean(cp.square(self.target_data - self.output),axis=(1,2))
+        self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
@@ -171,7 +171,7 @@ def main(gpu_id = None):
                     test_loss = evo_model.get_losses(True)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(test_target, conv_output, evo_target, evo_output[0], i)
+                    plot_outputs(conv_target, conv_output, evo_target, evo_output[0], i)
 
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))

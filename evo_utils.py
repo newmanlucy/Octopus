@@ -83,10 +83,12 @@ def convolve(x, var_dict, filt_type):
     else:
         conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
     
+    i = 0
     x = pad(x)
     for key in var_dict.keys():
         if filt_type in key:
-            conv[:,:,:,:,i] = apply_filter(x, var_dict[filters[i]])
+            conv[:,:,:,:,i] = apply_filter(x, var_dict[key])
+            i += 1
 
     return conv
 
