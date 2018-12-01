@@ -72,24 +72,21 @@ def apply_filter(x, filt):
     temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
     for i in range(128):
         for j in range(128):
-            temp[:,:,i,j] = np.sum(x[:,:,i:i+3,j:j+3,:] * np.expand_dims(filt,axis=1))
+            temp[:,:,i,j] = cp.sum(x[:,:,i:i+3,j:j+3,:] * cp.expand_dims(filt,axis=1))
 
     return temp
 
 def convolve(x, var_dict, filt_type):
-    filters = []
-    for key in var_dict.keys():
-        if filt_type in key:
-            filters.append(key)
 
     if filt_type == 'conv1_filter':
-        conv = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
+        conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
     else:
-        conv = cp.zeros((par['n_networks'], par['batch_train_size'],*par['inp_img_shape'],3))
+        conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
     
     x = pad(x)
-    for i in range(len(filters)):
-        conv[:,:,:,:,i] = apply_filter(x, var_dict[filters[i]])
+    for key in var_dict.keys():
+        if filt_type in key:
+            conv[:,:,:,:,i] = apply_filter(x, var_dict[filters[i]])
 
     return conv
 

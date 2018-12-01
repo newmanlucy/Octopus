@@ -47,7 +47,10 @@ updates = {
     'normalize01'       : False,
     'num_layers'        : 3,
     'run_number'        : 5,
-    "save_iter"         : 10,
+    "save_iter"         : 100,
+    'print_iter'        : 10,
+    'n_networks'        : 10,
+    'num_conv1_filters' : 16,
     'task'              : 'conv_task'
 }
 try_model(updates)
