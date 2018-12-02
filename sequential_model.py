@@ -175,6 +175,7 @@ def main(gpu_id = None):
         start = time.time()
         threshold = [1000, 750, 500, 300, 150, -1]
         test_loss = [1000000]
+        check_stuck = False
         stuck = 0
 
         for i in range(par['num_iterations']):
@@ -184,7 +185,8 @@ def main(gpu_id = None):
             feed_dict = {x: input_data, y: conv_target}
             _, latent, conv_loss, conv_output = sess.run([model.train_op, model.latent, model.loss, model.output], feed_dict=feed_dict)
 
-            if conv_loss < 150:
+            if conv_loss < par['train_threshold']:
+                check_stuck = True
                 evo_model.load_batch(latent, evo_target)
                 evo_model.run_models()
                 evo_model.judge_models()
@@ -194,23 +196,29 @@ def main(gpu_id = None):
                 if evo_loss[0] < threshold[0]:
                     threshold.pop(0)
                     evo_loss.speed_up_mutation()
+                
+                if evo_loss[0] < test_loss[0]:
+                    stuck = 0
+                else:
+                    stuck += 1
+                    if stuck > 20:
+                        evo_model.speed_up_mutation()
             else:
-                evo_loss = test_loss
+                check_stuck = False
+                evo_loss = [1000000]
                 evo_output = np.array([evo_target, evo_target])
 
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:4} | Conv Loss: {:8.3f} | Evo Loss: {} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], time.time()-start))
+                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {} | Conv Loss: {:5.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, evo_loss[0:4], time.time()-start))
                 losses.append(evo_loss[0])
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
                     if evo_loss[0] < test_loss[0]:
-                        stuck = 0
-
                         # Generate batch from testing set and check the output
                         input_data, conv_target, evo_target = stim.generate_test_batch()
                         feed_dict = {x: input_data, y: conv_target}
@@ -221,7 +229,7 @@ def main(gpu_id = None):
                         evo_model.judge_models()
 
                         evo_output = evo_model.output
-                        if conv_loss < 250:
+                        if conv_loss < par['train_threshold'] + 100:
                             test_loss = evo_model.get_losses(True)
                             testing_losses.append(test_loss[0])
 
@@ -235,10 +243,7 @@ def main(gpu_id = None):
                     
                     else:
                         test_loss[0] = evo_loss[0]
-                        if conv_loss < 150:
-                            stuck += 1
-                        if stuck > 20:
-                            evo_model.speed_up_mutation()
+                        
 
                 # Plot loss curve
                 if i > 0:
