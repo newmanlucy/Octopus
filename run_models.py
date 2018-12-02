@@ -39,17 +39,18 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'debugging evo_model',
+    'a_note'            : 'one image',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'batch_train_size'  : 28,
+    'batch_train_size'  : 3,
     'learning_rate'     : 0.001,
     'normalize01'       : False,
     'num_layers'        : 3,
     'run_number'        : 7,
     "save_iter"         : 100,
-    'print_iter'        : 10,
-    'n_networks'        : 40,
+    'print_iter'        : 1,
+    'n_networks'        : 50,
+    'survival_rate'     : 0.1,
     'num_conv1_filters' : 16,
     'task'              : 'conv_task'
 }

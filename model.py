@@ -11,7 +11,7 @@ import numpy as np
 import copy
 from stimulus import Stimulus
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
+# plt.switch_backend('agg')
 from parameters import *
 from evo_utils import *
 
@@ -34,13 +34,13 @@ class EvoModel:
     def make_variables(self):
         self.var_dict = {}
         for i in range(par['num_conv1_filters']):
-            self.var_dict['conv1_filter{}'] = cp.random.normal(size=(par['n_networks'],3,3,3))
+            self.var_dict['conv1_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,3)).astype(cp.float32)
         for i in range(3):
-            self.var_dict['conv2_filter{}'] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters']))
+            self.var_dict['conv2_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters'])).astype(cp.float32)
 
-        self.var_dict['conv1_bias'] = cp.random.normal(size=(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters']))
-        self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3))
-        self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output']))
+        self.var_dict['conv1_bias'] = cp.random.normal(size=(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])).astype(cp.float32)
+        self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3)).astype(cp.float32)
+        self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output'])).astype(cp.float32)
 
 
     def make_constants(self):
@@ -62,7 +62,8 @@ class EvoModel:
         x = cp.reshape(cp.repeat(cp.expand_dims(self.input_data,axis=0),par['n_networks'],axis=0), (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
         conv1 = relu(convolve(x, self.var_dict, 'conv1_filter') + cp.expand_dims(self.var_dict['conv1_bias'],axis=1))
         conv2 = relu(convolve(conv1, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
-        self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])) + cp.expand_dims(self.var_dict['b_out'],axis=1))
+        self.output = cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))
+        # self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])) + cp.expand_dims(self.var_dict['b_out'],axis=1))
         # x:      (net, 32, 128, 128, 3)
         # conv1:  (net, 32, 128, 128, 64)
         # conv2:  (net, 32, 128, 128, 3)
@@ -72,7 +73,7 @@ class EvoModel:
         self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
 
         # Rank the networks (returns [n_networks] indices)
-        self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
+        self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
@@ -87,13 +88,13 @@ class EvoModel:
             return to_cpu(self.loss)
 
     def breed_models_genetic(self):
+
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
             indices = cp.arange(s+par['num_survivors'], par['n_networks'], par['num_survivors'])
-
             self.var_dict[name][indices,...] = mutate(self.var_dict[name][s,...], indices.shape[0],\
                 self.con_dict['mutation_rate'], self.con_dict['mutation_strength'])
 
-
+        
 def main(gpu_id = None):
 
     if gpu_id is not None:
@@ -140,16 +141,15 @@ def main(gpu_id = None):
             evo_model.load_batch(conv_output, evo_target)
             evo_model.run_models()
             evo_model.judge_models()
-            
-            evo_loss = evo_model.get_losses(True)
             evo_model.breed_models_genetic()
+            evo_loss = evo_model.get_losses(True)
 
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
                 print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:5], time.time()-start))
+                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], time.time()-start))
                 losses.append(evo_loss)
 
                 # Save one training and output img from this iteration
@@ -271,52 +271,6 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
-
-def eval_weights():
-
-    """ NEED TO FIX """
-    with tf.variable_scope('encoder', reuse=True):
-        W_in = tf.get_variable('W_in')
-        b_enc = tf.get_variable('b_enc')
-
-    with tf.variable_scope('decoder', reuse=True):
-        W_dec = tf.get_variable('W_dec')
-        b_dec = tf.get_variable('b_dec')
-        W_out = tf.get_variable('W_out')
-        b_out = tf.get_variable('b_out')
-
-    weights = {
-        'W_in'  : W_in.eval(),
-        'W_dec' : W_dec.eval(),
-        'W_out' : W_out.eval(),
-        'b_enc' : b_enc.eval(),
-        'b_dec' : b_dec.eval(),
-        'b_out' : b_out.eval(),
-    }
-
-    if par['num_layers'] >= 3:
-        with tf.variable_scope('encoder', reuse=True):
-            W_enc = tf.get_variable('W_enc')
-            b_latent = tf.get_variable('b_latent')
-
-        weights['W_enc'] = W_enc.eval()
-        weights['b_latent'] = b_latent.eval()
-
-    if par['num_layers'] == 5:
-        with tf.variable_scope('encoder', reuse=True):
-            W_link = tf.get_variable('W_link')
-            b_link = tf.get_variable('b_link')
-
-        with tf.variable_scope('decoder', reuse=True):
-            W_link2 = tf.get_variable('W_link2')
-            b_link2 = tf.get_variable('b_link2')
-
-        weights['W_link'] = W_link.eval()
-        weights['b_link'] = b_link.eval()
-        weights['W_link2'] = W_link2.eval()
-        weights['b_link2'] = b_link2.eval()
-
-    return weights
 
 
 if __name__ == "__main__":
