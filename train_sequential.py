@@ -49,8 +49,8 @@ updates = {
     'num_conv1_filters' : 64,
     'n_networks'        : 75,
     'survival_rate'     : 0.12,
-    'mutation_rate'     : 0.6,
-    'mutation_strength' : 0.6,
+    'mutation_rate'     : 0.4,
+    'mutation_strength' : 0.4,
     'train_threshold'   : 150,
     'task'              : 'conv_task'
 }

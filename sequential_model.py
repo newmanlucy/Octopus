@@ -195,7 +195,7 @@ def main(gpu_id = None):
                 evo_loss = evo_model.get_losses(True)
                 if evo_loss[0] < threshold[0]:
                     threshold.pop(0)
-                    evo_loss.speed_up_mutation()
+                    evo_model.slowdown_mutation()
                 
                 if evo_loss[0] < test_loss[0]:
                     stuck = 0
