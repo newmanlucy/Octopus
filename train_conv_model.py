@@ -60,9 +60,9 @@ class Model:
     def optimize(self):
         # Calculae loss
         self.loss = tf.multiply(tf.losses.mean_squared_error(self.target_data, self.output), 1, name='l')
-        self.loss_test = tf.losses.mean_squared_error(self.target_data, self.output_testing)
+        self.loss_test = tf.losses.mean_squared_error(self.color_data, self.output_testing)
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
-        self.train_op_test = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss_test)
+        self.train_op2 = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss_test)
 
 
 class EvoModel:
@@ -148,7 +148,7 @@ def main(gpu_id = None):
             feed_dict = {x: input_data, y: target_data, z: color_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
 
-            if train_loss < 200:
+            if train_loss < 20000000000:
                 _, _, train_loss, train_loss2, model_output, model_output2 = \
                 sess.run([model.train_op, model.train_op2, model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
             else:
@@ -173,11 +173,11 @@ def main(gpu_id = None):
 
                     plot_outputs(test_target, test_output, color_data, test_output2, i)
 
-                    pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                    # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                        # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                     
-                    saved_path = saver.save(sess, './conv_model_testing')
-                    print('model saved in {}'.format(saved_path))
+                    # saved_path = saver.save(sess, './conv_model_testing')
+                    # print('model saved in {}'.format(saved_path))
 
                 # Plot loss curve
                 if i > 0:

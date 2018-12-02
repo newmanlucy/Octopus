@@ -173,7 +173,7 @@ def main(gpu_id = None):
 
         # Train the model
         start = time.time()
-        threshold = [1000, 750, 500, 300, 150, -1]
+        threshold = [10000, 1000, 750, 500, 300, 150, -1]
         test_loss = [1000000]
         check_stuck = False
         stuck = 0
@@ -241,8 +241,8 @@ def main(gpu_id = None):
                         # saved_path = saver.save(sess, './evo_model')
                         # print('model saved in {}'.format(saved_path))
                     
-                    else:
-                        test_loss[0] = evo_loss[0]
+                    # else:
+                        # test_loss[0] = evo_loss[0]
                         
 
                 # Plot loss curve
