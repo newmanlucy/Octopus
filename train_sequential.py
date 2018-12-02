@@ -39,18 +39,18 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'testing conv + evo',
+    'a_note'            : 'latent input, one images',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'batch_train_size'  : 32,
-    'learning_rate'     : 0.001,
-    'normalize01'       : False,
-    'num_layers'        : 3,
+    'batch_train_size'  : 2,
     'run_number'        : 5,
-    'save_iter'         : 100,
-    'print_iter'        : 10,
-    'n_networks'        : 100,
-    'num_conv1_filters' : 32,
+    'save_iter'         : 5,
+    'print_iter'        : 1,
+    'num_conv1_filters' : 64,
+    'n_networks'        : 50,
+    'survival_rate'     : 0.12,
+    'mutation_rate'     : 0.4,
+    'mutation_strength' : 0.4,
     'task'              : 'conv_task'
 }
 try_model(updates)

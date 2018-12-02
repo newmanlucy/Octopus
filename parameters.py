@@ -33,7 +33,7 @@ par = {
     
     # Training
     'task'              : 'bw_to_bw_simple',
-    'learning_rate'     : 0.1,
+    'learning_rate'     : 0.001,
     'connection_prob'   : 1,
     'dropout'           : 1,
 
@@ -43,7 +43,8 @@ par = {
     'noise_rnn_sd'      : 0.5,
 
     # Training setup
-    'batch_train_size'  : 100,
+    'normalize01'       : False,
+    'batch_train_size'  : 32,
     'num_iterations'    : 30001,
     'print_iter'        : 10,
     'save_iter'         : 2000

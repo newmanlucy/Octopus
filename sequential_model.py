@@ -48,16 +48,13 @@ class Model:
         upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        conv6 = tf.layers.conv2d(inputs=upsample3, filters=par['num_conv1_filters'], kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 
-        self.latent = tf.layers.flatten(latent) # (32, 32*32*256)
+        self.latent = conv6 # (32, 32*32*256)
 
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        if par['normalize01']:
-            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-        else:
-            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-            self.o = tf.multiply(self.output, 1, name='o')
+        self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+        self.o = tf.multiply(self.output, 1, name='o')
  
     def optimize(self):
         # Calculae loss
@@ -75,14 +72,14 @@ class EvoModel:
  
     def make_variables(self):
         self.var_dict = {}
-        for i in range(par['num_conv1_filters']):
-            self.var_dict['conv1_filter{}'] = cp.random.rand(par['n_networks'],3,3,3)
+        # for i in range(par['num_conv1_filters']):
+            # self.var_dict['conv1_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,3)).astype(cp.float32)
         for i in range(3):
-            self.var_dict['conv2_filter{}'] = cp.random.rand(par['n_networks'],3,3,par['num_conv1_filters'])
+            self.var_dict['conv2_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters'])).astype(cp.float32)
 
-        self.var_dict['conv1_bias'] = cp.random.rand(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])
-        self.var_dict['conv2_bias'] = cp.random.rand(par['n_networks'],*par['inp_img_shape'],3)
-        self.var_dict['b_out'] = cp.random.rand(par['n_networks'],par['n_output'])
+        # self.var_dict['conv1_bias'] = cp.random.normal(size=(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])).astype(cp.float32)
+        self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3)).astype(cp.float32)
+        self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output'])).astype(cp.float32)
 
 
     def make_constants(self):
@@ -96,26 +93,18 @@ class EvoModel:
         self.con_dict[name] = to_gpu(val)
 
     def load_batch(self, input_data, target_data):
-        self.input_data = to_gpu(input_data)
+        self.input_data = cp.repeat(cp.expand_dims(to_gpu(input_data), axis=0), par['n_networks'], axis=0)
         self.target_data = to_gpu(target_data)
 
     def run_models(self):
+        conv1 = relu(convolve(self.input_data, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
+        self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],par['n_output']))
 
-        x = cp.reshape(cp.repeat(cp.expand_dims(self.input_data,axis=0),par['n_networks'],axis=0), (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
-        conv1 = convolve(x, self.var_dict, 'conv1_filter') + cp.expand_dims(self.var_dict['conv1_bias'],axis=1)
-        conv2 = convolve(conv1, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1)
-        self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))) + cp.expand_dims(self.var_dict['b_out'],axis=1)
-        # x:      (net, 32, 128, 128, 3)
-        # conv1:  (net, 32, 128, 128, 64)
-        # conv2:  (net, 32, 128, 128, 3)
-        # output: (net, 32, 49152)
- 
     def judge_models(self):
-        self.loss = cp.mean(cp.square(self.target_data - self.output),axis=(1,2))
-        print(self.loss.shape)
+        self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
 
         # Rank the networks (returns [n_networks] indices)
-        self.rank = cp.argsort(self.loss.astype(cp.float32)).astype(cp.int16)
+        self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
@@ -128,6 +117,14 @@ class EvoModel:
             return to_cpu(self.loss[self.rank])
         else:
             return to_cpu(self.loss)
+
+    def slowdown_mutation(self):
+        self.con_dict['mutation_rate'] *= 0.75
+        self.con_dict['mutation_strength'] *= 0.875
+
+    def speed_up_mutation(self):
+        self.con_dict['mutation_rate'] *= 1.25
+        self.con_dict['mutation_strength'] *= 1.125
 
     def breed_models_genetic(self):
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
@@ -148,11 +145,12 @@ def main(gpu_id = None):
 
     # Generate stimulus
     stim = Stimulus()
+    evo_model = EvoModel()
 
     # Placeholders for the tensorflow model
     x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']], name='x')
     y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='y')
-    
+
     # Model stats
     losses = []
     testing_losses = []
@@ -164,14 +162,16 @@ def main(gpu_id = None):
         with tf.device(device):
             model = Model(x,y)
         
-        evo_model = EvoModel()
-        
         init = tf.global_variables_initializer()
         sess.run(init)
         saver = tf.train.Saver()
 
         # Train the model
         start = time.time()
+        threshold = [1000, 750, 500, 300, 150, -1]
+        test_loss = [1000000]
+        stuck = 0
+
         for i in range(par['num_iterations']):
 
             # Generate training set
@@ -179,45 +179,60 @@ def main(gpu_id = None):
             feed_dict = {x: input_data, y: conv_target}
             _, latent, conv_loss, conv_output = sess.run([model.train_op, model.latent, model.loss, model.output], feed_dict=feed_dict)
 
-            # if conv_loss < 500:
-            # else: 
-            evo_model.load_batch(conv_output, evo_target)
-            evo_model.run_models()
-            evo_model.judge_models()
-            
-            evo_loss = evo_model.get_losses(True)
-            evo_model.breed_models_genetic()
+            if conv_loss < 600:
+                evo_model.load_batch(latent, evo_target)
+                evo_model.run_models()
+                evo_model.judge_models()
+                evo_model.breed_models_genetic()
+
+                evo_loss = evo_model.get_losses(True)
+                if evo_loss[0] < threshold[0]:
+                    threshold.pop(0)
+                    evo_loss.speed_up_mutation()
+            else:
+                evo_loss = test_loss
+                evo_output = np.array([evo_target, evo_target])
 
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | FF Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0], time.time()-start))
+                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], time.time()-start))
                 losses.append(evo_loss[0])
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
+                    if evo_loss[0] < test_loss[0]:
+                        stuck = 0
 
-                    # Generate batch from testing set and check the output
-                    input_data, conv_target, evo_target = stim.generate_test_batch()
-                    feed_dict = {x: input_data, y: conv_target}
-                    latent, conv_loss, conv_output = sess.run([model.latent, model.loss, model.output], feed_dict=feed_dict)
+                        # Generate batch from testing set and check the output
+                        input_data, conv_target, evo_target = stim.generate_test_batch()
+                        feed_dict = {x: input_data, y: conv_target}
+                        latent, conv_loss, conv_output = sess.run([model.latent, model.loss, model.output], feed_dict=feed_dict)
 
-                    evo_model.load_batch(conv_output, evo_target)
-                    evo_model.run_models()
-                    evo_model.judge_models()
+                        evo_model.load_batch(latent, evo_target)
+                        evo_model.run_models()
+                        evo_model.judge_models()
 
-                    test_loss = evo_model.get_losses(True)
-                    testing_losses.append(test_loss[0])
+                        evo_output = evo_model.output
+                        if conv_loss < 750:
+                            test_loss = evo_model.get_losses(True)
+                            testing_losses.append(test_loss[0])
 
-                    plot_outputs(conv_target, conv_output, evo_target, evo_model.output[0], i)
+                        plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0], evo_output[1][0]]), i)
 
-                    # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                        pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                            open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                        
+                        # saved_path = saver.save(sess, './evo_model')
+                        # print('model saved in {}'.format(saved_path))
                     
-                    # saved_path = saver.save(sess, './evo_model')
-                    # print('model saved in {}'.format(saved_path))
+                    else:
+                        test_loss[0] = evo_loss[0]
+                        stuck += 1
+                        if stuck > 20:
+                            evo_model.speed_up_mutation()
 
                 # Plot loss curve
                 if i > 0:
@@ -287,10 +302,10 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
     # Results from a testing sample
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
+    original2 = test_target[0].reshape(par['out_img_shape'])
+    output2 = test_output[0].reshape(par['out_img_shape'])
+    original3 = test_target[1].reshape(par['out_img_shape'])
+    output3 = test_output[1].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 

@@ -8,8 +8,9 @@ class Stimulus:
     def __init__(self):
 
         # Get files from img_dir
-        # files = ['clean.60.jpg','clean.58.jpg','clean.65.jpg','clean.62.jpg','clean.52.jpg']#os.listdir(par['input_dir'])
+        # files = ['clean.60.jpg','clean.58.jpg','clean.65.jpg','clean.62.jpg','clean.52.jpg']
         files = ['clean.60.jpg']
+        # files = os.listdir(par['input_dir'])
         files = list(np.array(files)[np.random.choice(np.arange(len(files)),size=2000)])
         for f in files:
             if 'clean' not in f:

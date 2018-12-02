@@ -87,9 +87,13 @@ class EvoModel:
         else:
             return to_cpu(self.loss)
 
-    def update_mutation_rates(self):
+    def slowdown_mutation(self):
         self.con_dict['mutation_rate'] *= 0.75
-        self.con_dict['mutation_strength'] *= 0.75
+        self.con_dict['mutation_strength'] *= 0.875
+
+    def speed_up_mutation(self):
+        self.con_dict['mutation_rate'] *= 1.25
+        self.con_dict['mutation_strength'] *= 1.125
 
     def breed_models_genetic(self):
 
@@ -127,7 +131,9 @@ def main(gpu_id = None):
             # conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
             # conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
 
-        threshold = [1000, 750, 500, 300, 150, -1]
+        threshold = [10000, 5000, 1000, 750, 500, 300, 150, -1]
+        test_loss = [1000000000000]
+        stuck = 0
 
         # Train the model
         start = time.time()
@@ -137,8 +143,8 @@ def main(gpu_id = None):
             input_data, conv_target, evo_target = stim.generate_train_batch()
             conv_output = np.array(conv_target)
             conv_loss = 0
-            feed_dict = {'x:0': input_data, 'y:0': conv_target}
-            conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
+            # feed_dict = {'x:0': input_data, 'y:0': conv_target}
+            # conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
             # "TRAIN" EVO MODEL
             # if conv_loss < 500:
@@ -147,10 +153,11 @@ def main(gpu_id = None):
             evo_model.run_models()
             evo_model.judge_models()
             evo_model.breed_models_genetic()
+
             evo_loss = evo_model.get_losses(True)
             if evo_loss[0] < threshold[0]:
                 threshold.pop(0)
-                evo_loss.update_mutation_rates()
+                evo_loss.slowdown_mutation()
 
             # Check current status
             if i % par['print_iter'] == 0:
@@ -162,27 +169,35 @@ def main(gpu_id = None):
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
+                    if evo_loss[0] < test_loss[0]:
+                        stuck = 0
 
-                    # Generate batch from testing set and check the output
-                    input_data, conv_target, evo_target = stim.generate_test_batch()
-                    conv_output = np.array(conv_target)
-                    conv_loss = 0
-                    # feed_dict = {'x:0': test_input, 'y:0': conv_target}
-                    # test_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
+                        # Generate batch from testing set and check the output
+                        input_data, conv_target, evo_target = stim.generate_test_batch()
+                        conv_output = np.array(conv_target)
+                        conv_loss = 0
+                        # feed_dict = {'x:0': test_input, 'y:0': conv_target}
+                        # test_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
-                    # "TEST" EVO MODEL
-                    evo_model.load_batch(conv_output, evo_target)
-                    evo_model.run_models()
-                    evo_model.judge_models()
+                        # "TEST" EVO MODEL
+                        evo_model.load_batch(conv_output, evo_target)
+                        evo_model.run_models()
+                        evo_model.judge_models()
 
-                    evo_output = evo_model.output
-                    test_loss = evo_model.get_losses(True)
-                    testing_losses.append(test_loss)
+                        evo_output = evo_model.output
+                        test_loss = evo_model.get_losses(True)
+                        testing_losses.append(test_loss)
 
-                    plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
+                        plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
 
-                    pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                        pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                            open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+
+                    else:
+                        test_loss[0] = evo_loss[0]
+                        stuck += 1
+                        if stuck > 20:
+                            evo_model.speed_up_mutation()
                     
                     # FIGURE OUT HOW TO SAVE EVO MODEL
 

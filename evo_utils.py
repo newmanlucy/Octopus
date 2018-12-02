@@ -40,18 +40,19 @@ def relu(x):
 
 def pad(x):
     shape = x.shape
+    idx = shape[2]-1 #127 for 128x128 img
     temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,shape[-1]))
-    temp[:,:,1:129,1:129,:] = x
+    temp[:,:,1:idx+2,1:idx+2,:] = x
 
     temp[:,:,0,0,:]         = x[:,:,0,0,:]
-    temp[:,:,0,129,:]       = x[:,:,0,127,:]
-    temp[:,:,129,0,:]       = x[:,:,127,0,:]
-    temp[:,:,129,129,:]     = x[:,:,127,127,:]
+    temp[:,:,0,idx+2,:]       = x[:,:,0,idx,:]
+    temp[:,:,idx+2,0,:]       = x[:,:,idx,0,:]
+    temp[:,:,idx+2,idx+2,:]     = x[:,:,idx,idx,:]
     
-    temp[:,:,0,1:129,:]     = x[:,:,0,:,:]
-    temp[:,:,129,1:129,:]   = x[:,:,127,:,:]
-    temp[:,:,1:129,0,:]     = x[:,:,:,0,:]
-    temp[:,:,1:129,129,:]   = x[:,:,:,127,:]
+    temp[:,:,0,1:idx+2,:]     = x[:,:,0,:,:]
+    temp[:,:,idx+2,1:idx+2,:]   = x[:,:,idx,:,:]
+    temp[:,:,1:idx+2,0,:]     = x[:,:,:,0,:]
+    temp[:,:,1:idx+2,idx+2,:]   = x[:,:,:,idx,:]
     return temp
 
 def apply_filter(x, filt):
@@ -63,7 +64,6 @@ def apply_filter(x, filt):
     return temp
 
 def convolve(x, var_dict, filt_type):
-
     if filt_type == 'conv1_filter':
         conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
     else:
