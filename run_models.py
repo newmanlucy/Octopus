@@ -24,7 +24,7 @@ def try_model(updates):
     # Save updated parameters
     with io.open(par['save_dir']+'run_'+str(par['run_number'])+'_params.json', 'w', encoding='utf8') as outfile:
         str_ = json.dumps(updates,
-                          indent=4, sort_keys=True,
+                          indent=4, sort_keys=False,
                           separators=(',', ': '), ensure_ascii=False)
         outfile.write(to_unicode(str_))
 
@@ -42,16 +42,17 @@ updates = {
     'a_note'            : 'one image',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'batch_train_size'  : 3,
     'learning_rate'     : 0.001,
     'normalize01'       : False,
-    'num_layers'        : 3,
-    'run_number'        : 7,
-    "save_iter"         : 100,
+    'run_number'        : 8,
+    'save_iter'         : 10,
     'print_iter'        : 1,
+    'batch_train_size'  : 1,
+    'num_conv1_filters' : 16,
     'n_networks'        : 50,
     'survival_rate'     : 0.1,
-    'num_conv1_filters' : 16,
+    'mutation_rate'     : 0.2,
+    'mutation_strength' : 0.25,
     'task'              : 'conv_task'
 }
 try_model(updates)

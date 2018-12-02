@@ -171,7 +171,7 @@ def main(gpu_id = None):
                     test_loss = evo_model.get_losses(True)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(conv_target, conv_output, evo_target, evo_output[0], i)
+                    plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
 
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
@@ -180,7 +180,7 @@ def main(gpu_id = None):
 
                 # Plot loss curve
                 if i > 0:
-                    plt.plot(losses[1:])
+                    plt.plot([l[0]for l in losses[1:]])
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
                     plt.close()
 
@@ -246,10 +246,10 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
     # Results from a testing sample
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
+    original2 = test_target[0].reshape(par['out_img_shape'])
+    output2 = test_output[0].reshape(par['out_img_shape'])
+    original3 = test_target[0].reshape(par['out_img_shape'])
+    output3 = test_output[1].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
