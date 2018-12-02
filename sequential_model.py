@@ -101,7 +101,9 @@ class EvoModel:
         self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],par['n_output']))
 
     def judge_models(self):
-        self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
+        img_len = self.target_data.shape[2]
+        trimmed_img = cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0)[:,:,1:img_len-1,1:img_len-1,:]
+        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,:,1:img_len-1,1:img_len-1,:]),axis=(1,2))
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
@@ -179,7 +181,7 @@ def main(gpu_id = None):
             feed_dict = {x: input_data, y: conv_target}
             _, latent, conv_loss, conv_output = sess.run([model.train_op, model.latent, model.loss, model.output], feed_dict=feed_dict)
 
-            if conv_loss < 600:
+            if conv_loss < 150:
                 evo_model.load_batch(latent, evo_target)
                 evo_model.run_models()
                 evo_model.judge_models()
@@ -197,8 +199,8 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], time.time()-start))
+                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], time.time()-start))
                 losses.append(evo_loss[0])
 
                 # Save one training and output img from this iteration
@@ -216,7 +218,7 @@ def main(gpu_id = None):
                         evo_model.judge_models()
 
                         evo_output = evo_model.output
-                        if conv_loss < 750:
+                        if conv_loss < 250:
                             test_loss = evo_model.get_losses(True)
                             testing_losses.append(test_loss[0])
 
@@ -230,7 +232,8 @@ def main(gpu_id = None):
                     
                     else:
                         test_loss[0] = evo_loss[0]
-                        stuck += 1
+                        if conv_loss < 150:
+                            stuck += 1
                         if stuck > 20:
                             evo_model.speed_up_mutation()
 
@@ -257,41 +260,6 @@ def main(gpu_id = None):
         #     plot_testing(test_target[idx], test_output[idx], i)
 
 
-
-
-def plot_testing(test_target, test_output, i):
-
-    # Results from a testing sample
-    original1 = test_target[0].reshape(par['out_img_shape'])
-    output1 = test_output[0].reshape(par['out_img_shape'])
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(original1,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-
-    vis1 = np.concatenate((original1, output1), axis=1)
-    vis2 = np.concatenate((original2, output2), axis=1)
-    vis3 = np.concatenate((original3, output3), axis=1)
-    vis = np.concatenate((vis1, vis2), axis=0)
-    vis = np.concatenate((vis, vis3), axis=0)
-    vis = copy.deepcopy(vis)
-    if par['normalize01']:
-        print("UN-NORMALIZE")
-        if np.max(vis) > 1 or np.min(vis) < 0:
-            print(np.max(vis))
-            print(np.min(vis))
-            print("Something is wrong")
-            quit()
-        vis *= 255
-        vis = np.int16(vis)
-
-    cv2.imwrite(par['save_dir']+'run_test_'+str(par['run_number'])+'_output_'+str(i)+'.png', vis)
-
-
 def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
@@ -302,9 +270,15 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
     # Results from a testing sample
+    trim = np.array([0,-1])
     original2 = test_target[0].reshape(par['out_img_shape'])
+    original2[trim,:,:] = 0
+    original2[:,trim,:] = 0
     output2 = test_output[0].reshape(par['out_img_shape'])
+
     original3 = test_target[1].reshape(par['out_img_shape'])
+    original3[trim,:,:] = 0
+    original3[:,trim,:] = 0
     output3 = test_output[1].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)

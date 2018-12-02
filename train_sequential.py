@@ -39,11 +39,11 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'latent input, one images',
+    'a_note'            : 'latent input, one image, later training + trim border',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'batch_train_size'  : 2,
-    'run_number'        : 5,
+    'run_number'        : 3,
     'save_iter'         : 5,
     'print_iter'        : 1,
     'num_conv1_filters' : 64,

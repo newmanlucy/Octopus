@@ -19,10 +19,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 class Model:
 
-    def __init__(self, input_data, target_data):
+    def __init__(self, input_data, target_data, color_data):
         # Load input and target data
         self.input_data = input_data
         self.target_data = target_data
+        self.color_data = color_data
 
         # Run model
         self.run_model()
@@ -47,20 +48,21 @@ class Model:
         upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        conv6 = tf.layers.conv2d(inputs=upsample3, filters=par['num_conv1_filters'], kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 
+        self.latent = conv6
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        if par['normalize01']:
-            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-        else:
-            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-            self.o = tf.multiply(self.output, 1, name='o')
+        self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='o')
+
+        conv_testing = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
+        self.output_testing = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
  
     def optimize(self):
         # Calculae loss
-        self.loss = tf.losses.mean_squared_error(self.target_data, self.output)
-        self.l = tf.multiply(self.loss, 1, name='l')
+        self.loss = tf.multiply(tf.losses.mean_squared_error(self.target_data, self.output), 1, name='l')
+        self.loss_test = tf.losses.mean_squared_error(self.target_data, self.output_testing)
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
+        self.train_op_test = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss_test)
 
 
 class EvoModel:
@@ -96,11 +98,8 @@ class EvoModel:
         conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        if par['normalize01']:
-            self.output = tf.nn.sigmoid(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-        else:
-            self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
-            self.o = tf.multiply(self.output, 1, name='o')
+        self.output = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
+        self.o = tf.multiply(self.output, 1, name='o')
  
     def optimize(self):
         # Calculae loss
@@ -123,8 +122,7 @@ def main(gpu_id = None):
     # Placeholders for the tensorflow model
     x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']], name='x')
     y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='y')
-    evo_x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='evo_x')
-    evo_y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='evo_y')
+    z = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='z')
 
     # Model stats
     losses = []
@@ -135,8 +133,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            model = Model(x,y)
-            evo_model = EvoModel(evo_x,evo_y)
+            model = Model(x,y,z)
         
         init = tf.global_variables_initializer()
         sess.run(init)
@@ -147,33 +144,39 @@ def main(gpu_id = None):
         for i in range(par['num_iterations']):
 
             # Generate training set
-            input_data, target_data, _ = stim.generate_train_batch()
-            feed_dict = {x: input_data, y: target_data}
+            input_data, target_data, color_data = stim.generate_train_batch()
+            feed_dict = {x: input_data, y: target_data, z: color_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
+
+            if train_loss < 200:
+                _, _, train_loss, train_loss2, model_output, model_output2 = \
+                sess.run([model.train_op, model.train_op2, model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
+            else:
+                train_loss2 = 0
 
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, train_loss, time.time()-start))
+                print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], par['task'], i, train_loss, train_loss2, time.time()-start))
                 losses.append(train_loss)
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
 
                     # Generate batch from testing set and check the output
-                    test_input, test_target, _ = stim.generate_test_batch()
-                    feed_dict = {x: test_input, y: test_target}
-                    test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+                    test_input, test_target, color_data = stim.generate_test_batch()
+                    feed_dict = {x: test_input, y: test_target, z: color_data}
+                    test_loss, test_loss2, test_output, test_output2 = sess.run([model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(target_data, model_output, test_target, test_output, i)
+                    plot_outputs(test_target, test_output, color_data, test_output2, i)
 
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                     
-                    saved_path = saver.save(sess, './conv_model_for_evo')
+                    saved_path = saver.save(sess, './conv_model_testing')
                     print('model saved in {}'.format(saved_path))
 
                 # Plot loss curve
@@ -184,21 +187,21 @@ def main(gpu_id = None):
 
         
         # Generate batch from testing set and check the output
-        test_input, test_target = stim.generate_test_batch()
-        feed_dict = {x: test_input, y: test_target}
-        test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
-        print("FINAL TEST LOSS IS: ", test_loss)
+        # test_input, test_target = stim.generate_test_batch()
+        # feed_dict = {x: test_input, y: test_target}
+        # test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
+        # print("FINAL TEST LOSS IS: ", test_loss)
 
-        pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+        # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+        #                 open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
 
-        plt.plot(testing_losses)
-        plt.savefig(par['save_dir']+'run_test_'+str(par['run_number'])+'_testing_curve.png')
-        plt.close()
+        # plt.plot(testing_losses)
+        # plt.savefig(par['save_dir']+'run_test_'+str(par['run_number'])+'_testing_curve.png')
+        # plt.close()
 
-        for i in range(10):
-            idx = [i, i+10, i+20]
-            plot_testing(test_target[idx], test_output[idx], i)
+        # for i in range(10):
+        #     idx = [i, i+10, i+20]
+        #     plot_testing(test_target[idx], test_output[idx], i)
 
 
 
@@ -272,56 +275,34 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
 
-def eval_weights():
-
-    """ NEED TO FIX """
-    with tf.variable_scope('encoder', reuse=True):
-        W_in = tf.get_variable('W_in')
-        b_enc = tf.get_variable('b_enc')
-
-    with tf.variable_scope('decoder', reuse=True):
-        W_dec = tf.get_variable('W_dec')
-        b_dec = tf.get_variable('b_dec')
-        W_out = tf.get_variable('W_out')
-        b_out = tf.get_variable('b_out')
-
-    weights = {
-        'W_in'  : W_in.eval(),
-        'W_dec' : W_dec.eval(),
-        'W_out' : W_out.eval(),
-        'b_enc' : b_enc.eval(),
-        'b_dec' : b_dec.eval(),
-        'b_out' : b_out.eval(),
-    }
-
-    if par['num_layers'] >= 3:
-        with tf.variable_scope('encoder', reuse=True):
-            W_enc = tf.get_variable('W_enc')
-            b_latent = tf.get_variable('b_latent')
-
-        weights['W_enc'] = W_enc.eval()
-        weights['b_latent'] = b_latent.eval()
-
-    if par['num_layers'] == 5:
-        with tf.variable_scope('encoder', reuse=True):
-            W_link = tf.get_variable('W_link')
-            b_link = tf.get_variable('b_link')
-
-        with tf.variable_scope('decoder', reuse=True):
-            W_link2 = tf.get_variable('W_link2')
-            b_link2 = tf.get_variable('b_link2')
-
-        weights['W_link'] = W_link.eval()
-        weights['b_link'] = b_link.eval()
-        weights['W_link2'] = W_link2.eval()
-        weights['b_link2'] = b_link2.eval()
-
-    return weights
-
-
 if __name__ == "__main__":
-    main()
+    # GPU
+    try:
+        gpu_id = sys.argv[1]
+    except:
+        gpu_id = None
 
+    # Run Model
+    t0 = time.time()
+    try:
+        updates = {
+            'a_note'            : 'testing conv model latent output training',
+            'input_dir'         : './bw_im/',
+            'target_dir'        : './raw_im/',
+            'batch_train_size'  : 32,
+            'learning_rate'     : 0.001,
+            'normalize01'       : False,
+            'run_number'        : 7,
+            "save_iter"         : 100,
+            'task'              : 'conv_task',
+            'simulation'    : True
+        }
+        update_parameters(updates)
+        print('Model number ' + str(par['run_number']) + ' running!')
+        main(gpu_id)
+        print('Model run concluded.  Run time: {:5.3f} s.\n\n'.format(time.time()-t0))
+    except KeyboardInterrupt:
+        quit('Quit by KeyboardInterrupt.  Run time: {:5.3f} s.\n\n'.format(time.time()-t0))
 
 
 
