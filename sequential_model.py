@@ -8,6 +8,7 @@ import cv2
 import pickle
 import time
 import numpy as np
+np.set_printoptions(precision=3)
 import copy
 from stimulus import Stimulus
 import matplotlib.pyplot as plt
@@ -98,12 +99,14 @@ class EvoModel:
 
     def run_models(self):
         conv1 = relu(convolve(self.input_data, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
-        self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],par['n_output']))
+        self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],*par['out_img_shape']))
 
     def judge_models(self):
-        img_len = self.target_data.shape[2]
+        img_len = par['img_size']
+        self.target_data = cp.reshape(self.target_data, (par['batch_train_size'],*par['out_img_shape']))
         trimmed_img = cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0)[:,:,1:img_len-1,1:img_len-1,:]
-        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,:,1:img_len-1,1:img_len-1,:]),axis=(1,2))
+        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,:,1:img_len-1,1:img_len-1,:]),axis=(1,2,3,4))
+        self.output = cp.reshape(self.output, (par['n_networks'],par['batch_train_size'],par['n_output']))
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
@@ -199,7 +202,7 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Run Time: {:5.3f}s'.format( \
+                print('Model {:2} | Task: {:s} | Iter: {:4} | Conv Loss: {:8.3f} | Evo Loss: {} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Run Time: {:5.3f}s'.format( \
                     par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], time.time()-start))
                 losses.append(evo_loss[0])
 
@@ -289,16 +292,7 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     vis = np.concatenate((vis1, vis2), axis=0)
     vis = np.concatenate((vis, vis3), axis=0)
     vis = copy.deepcopy(vis)
-    if par['normalize01']:
-        print("UN-NORMALIZE")
-        if np.max(vis) > 1 or np.min(vis) < 0:
-            print(np.max(vis))
-            print(np.min(vis))
-            print("Something is wrong")
-            quit()
-        vis *= 255
-        vis = np.int16(vis)
-
+    
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
 

@@ -43,7 +43,7 @@ updates = {
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'batch_train_size'  : 2,
-    'run_number'        : 3,
+    'run_number'        : 5,
     'save_iter'         : 5,
     'print_iter'        : 1,
     'num_conv1_filters' : 64,
