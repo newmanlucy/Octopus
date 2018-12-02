@@ -87,6 +87,10 @@ class EvoModel:
         else:
             return to_cpu(self.loss)
 
+    def update_mutation_rates(self):
+        self.con_dict['mutation_rate'] *= 0.75
+        self.con_dict['mutation_strength'] *= 0.75
+
     def breed_models_genetic(self):
 
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
@@ -123,6 +127,7 @@ def main(gpu_id = None):
             # conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
             # conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
 
+        threshold = [1000, 750, 500, 300, 150, -1]
 
         # Train the model
         start = time.time()
@@ -132,8 +137,8 @@ def main(gpu_id = None):
             input_data, conv_target, evo_target = stim.generate_train_batch()
             conv_output = np.array(conv_target)
             conv_loss = 0
-            # feed_dict = {'x:0': input_data, 'y:0': conv_target}
-            # conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
+            feed_dict = {'x:0': input_data, 'y:0': conv_target}
+            conv_loss, conv_output = sess.run(['l:0', 'o:0'], feed_dict=feed_dict)
 
             # "TRAIN" EVO MODEL
             # if conv_loss < 500:
@@ -143,6 +148,9 @@ def main(gpu_id = None):
             evo_model.judge_models()
             evo_model.breed_models_genetic()
             evo_loss = evo_model.get_losses(True)
+            if evo_loss[0] < threshold[0]:
+                threshold.pop(0)
+                evo_loss.update_mutation_rates()
 
             # Check current status
             if i % par['print_iter'] == 0:
@@ -173,7 +181,7 @@ def main(gpu_id = None):
 
                     plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
 
-                    pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                    pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                         open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                     
                     # FIGURE OUT HOW TO SAVE EVO MODEL
@@ -248,7 +256,7 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     # Results from a testing sample
     original2 = test_target[0].reshape(par['out_img_shape'])
     output2 = test_output[0].reshape(par['out_img_shape'])
-    original3 = test_target[0].reshape(par['out_img_shape'])
+    original3 = test_target[1].reshape(par['out_img_shape'])
     output3 = test_output[1].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)

@@ -39,15 +39,15 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'one image',
+    'a_note'            : 'evo testing one img with changing mutation rate',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'learning_rate'     : 0.001,
     'normalize01'       : False,
-    'run_number'        : 8,
+    'run_number'        : 0,
     'save_iter'         : 10,
     'print_iter'        : 1,
-    'batch_train_size'  : 1,
+    'batch_train_size'  : 2,
     'num_conv1_filters' : 16,
     'n_networks'        : 50,
     'survival_rate'     : 0.1,
