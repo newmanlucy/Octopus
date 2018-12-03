@@ -28,6 +28,7 @@ par = {
     'survival_rate'     : 0.1,
     'mutation_rate'     : 0.1,
     'mutation_strength' : 0.20,
+    'migration_rate'    : 0.1,
     'cross_rate'        : 0,
     'use_crossing'      : False,
     
@@ -105,6 +106,7 @@ def update_dependencies():
         par['save_dir'] = './simulation/'
 
     par['num_survivors'] = int(par['n_networks'] * par['survival_rate'])
+    par['num_migrators'] = int(par['n_networks'] * par['migration_rate'])
 
 """
 Update parameters based on the given dictionary (updates)

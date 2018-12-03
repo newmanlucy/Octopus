@@ -8,6 +8,7 @@ import cv2
 import pickle
 import time
 import numpy as np
+np.set_printoptions(precision=3)
 import copy
 from stimulus import Stimulus
 import matplotlib.pyplot as plt
@@ -74,6 +75,10 @@ class EvoModel:
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
+        salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
+        if salvage_migrator not in self.rank[:par['num_survivors']]:
+            self.rank[par['num_survivors']-1] = salvage_migrator
+
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
@@ -106,7 +111,11 @@ class EvoModel:
             self.var_dict[name][indices,...] = mutate(self.var_dict[name][s,...], indices.shape[0],\
                 self.con_dict['mutation_rate'], self.con_dict['mutation_strength'])
 
-        
+    def migration(self):
+        for key in self.var_dict.keys():
+            shape = self.var_dict[key][-par['num_migrators']:,...].shape
+            self.var_dict[key][-par['num_migrators']:,...] = cp.random.normal(size=shape).astype(cp.float32)
+
 def main(gpu_id = None):
 
     if gpu_id is not None:
@@ -157,6 +166,7 @@ def main(gpu_id = None):
             evo_model.run_models()
             evo_model.judge_models()
             evo_model.breed_models_genetic()
+            evo_model.migration()
 
             evo_loss = evo_model.get_losses(True)
             if evo_loss[0] < threshold[0]:
@@ -175,8 +185,8 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {} | Conv Loss: {} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, evo_loss[0:4], time.time()-start))
+                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, np.array([*evo_loss[0:3],evo_loss[par['num_survivors']-1]]), time.time()-start))
                 losses.append(evo_loss)
 
                 # Save one training and output img from this iteration

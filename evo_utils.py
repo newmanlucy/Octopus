@@ -80,9 +80,9 @@ def convolve(x, var_dict, filt_type):
 
 ### Optimization functions
 
-# def cross(var1, var2, rate):
-    # """ Transmit some of var2 over to var1, based on the give rate """
-    # return var1 #cp.where(cp.random.choice([True,False], size=var1.shape, p=[rate, 1-rate]), var1, var2)
+def cross(var1, var2, rate):
+    """ Transmit some of var2 over to var1, based on the give rate """
+    return cp.where(cp.random.choice([True,False], size=var1.shape, p=[1-rate, rate]), var1, var2)
 
 def mutate(var, num, rate, scale, epsilon=0.):
     """ Mutates a given variable by a given rate and scale,

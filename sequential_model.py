@@ -110,6 +110,10 @@ class EvoModel:
 
         # Rank the networks (returns [n_networks] indices)
         self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
+        salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
+        if salvage_migrator not in self.rank[:par['num_survivors']]:
+            self.rank[par['num_survivors']-1] = salvage_migrator
+            
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
@@ -142,6 +146,10 @@ class EvoModel:
             self.var_dict[name][indices,...] = mutate(self.var_dict[name][s,...], indices.shape[0],\
                 self.con_dict['mutation_rate'], self.con_dict['mutation_strength'])
 
+    def migration(self):
+        for key in self.var_dict.keys():
+            shape = self.var_dict[key][-par['num_migrators']:,...]
+            self.var_dict[key][-par['num_migrators']:,...] = cp.random.normal(size=shape).astype(cp.float32)
 
 def main(gpu_id = None):
 
@@ -195,6 +203,7 @@ def main(gpu_id = None):
                 evo_model.run_models()
                 evo_model.judge_models()
                 evo_model.breed_models_genetic()
+                evo_model.migration()
 
                 evo_loss = evo_model.get_losses(True)
                 if evo_loss[0] < threshold[0]:
