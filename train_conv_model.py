@@ -172,60 +172,6 @@ def main(gpu_id = None):
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
                     plt.close()
 
-        
-        # Generate batch from testing set and check the output
-        # test_input, test_target = stim.generate_test_batch()
-        # feed_dict = {x: test_input, y: test_target}
-        # test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
-        # print("FINAL TEST LOSS IS: ", test_loss)
-
-        # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-        #                 open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
-
-        # plt.plot(testing_losses)
-        # plt.savefig(par['save_dir']+'run_test_'+str(par['run_number'])+'_testing_curve.png')
-        # plt.close()
-
-        # for i in range(10):
-        #     idx = [i, i+10, i+20]
-        #     plot_testing(test_target[idx], test_output[idx], i)
-
-
-
-
-def plot_testing(test_target, test_output, i):
-
-    # Results from a testing sample
-    original1 = test_target[0].reshape(par['out_img_shape'])
-    output1 = test_output[0].reshape(par['out_img_shape'])
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(original1,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-
-    vis1 = np.concatenate((original1, output1), axis=1)
-    vis2 = np.concatenate((original2, output2), axis=1)
-    vis3 = np.concatenate((original3, output3), axis=1)
-    vis = np.concatenate((vis1, vis2), axis=0)
-    vis = np.concatenate((vis, vis3), axis=0)
-    vis = copy.deepcopy(vis)
-    if par['normalize01']:
-        print("UN-NORMALIZE")
-        if np.max(vis) > 1 or np.min(vis) < 0:
-            print(np.max(vis))
-            print(np.min(vis))
-            print("Something is wrong")
-            quit()
-        vis *= 255
-        vis = np.int16(vis)
-
-    cv2.imwrite(par['save_dir']+'run_test_'+str(par['run_number'])+'_output_'+str(i)+'.png', vis)
-
-
 def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
@@ -236,10 +182,16 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
     # Results from a testing sample
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
+    if par['batch_train_size'] == 1:
+        original2 = test_target[0].reshape(par['out_img_shape'])
+        output2 = test_output[0].reshape(par['out_img_shape'])
+        original3 = test_target[0].reshape(par['out_img_shape'])
+        output3 = test_output[0].reshape(par['out_img_shape'])
+    else:
+        original2 = test_target[1].reshape(par['out_img_shape'])
+        output2 = test_output[1].reshape(par['out_img_shape'])
+        original3 = test_target[2].reshape(par['out_img_shape'])
+        output3 = test_output[2].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
@@ -276,10 +228,10 @@ if __name__ == "__main__":
             'a_note'            : 'conv_model with latent, batch16, filt 32',
             'input_dir'         : './bw_im/',
             'target_dir'        : './raw_im/',
-            'batch_train_size'  : 16,
+            'batch_train_size'  : 1,
             'learning_rate'     : 0.001,
             'normalize01'       : False,
-            'num_conv1_filters' : 32,
+            'num_conv1_filters' : 16,
             'run_number'        : 11,
             "save_iter"         : 100,
             'task'              : 'conv_task',

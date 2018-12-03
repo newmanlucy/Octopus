@@ -72,31 +72,25 @@ class EvoModel:
         if self.original:
             self.original = False
         else:
-            parent_idx = []
-            parent_loss = []
+            loss = self.loss.astype(cp.float64)
+            replace_parents = cp.zeros(par['num_survivors']).astype(cp.int16)
             for i in range(par['num_survivors']):
-                members = cp.arange(i,par['n_networks'],par['num_survivors'])
-                member_loss = self.loss[members]
-                index = cp.argsort(self.loss[members])
-                for j,k in enumerate(index):
-                    if j == 0:
-                        parent_idx.append(i + k*par['num_survivors'])
-                        parent_loss.append(self.loss[i + k*par['num_survivors']])
-                    self.rank[i + k*par['num_survivors']] = members[j]
+                replace_parents[i] = cp.argmin(loss[cp.arange(i,par['n_networks'],par['num_survivors'])])*par['num_survivors'] + i
+            
+            temp = copy.deepcopy(replace_parents)
+            for i,idx in enumerate(cp.argsort(self.loss[replace_parents])):
+                replace_parents[i] = temp[idx]
 
-            sort_parent = cp.argsort(cp.array(parent_loss))
-            for i,idx in enumerate(sort_parent):
-                self.rank[parent_idx[idx]] = i
-
-            if par['num_migrators'] > 0:
-                salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
-                if salvage_migrator >= par['num_survivors']:
-                    swap = cp.where(self.rank==par['num_survivors']-1)[0]
-                    self.rank[salvage_migrator] = par['num_survivors'] - 1
-                    self.rank[swap] = salvage_migrator
+            self.rank = (cp.ones(par['n_networks'])*(par['n_networks']-1)).astype(cp.int16)
+            self.rank[:par['num_survivors']] = replace_parents
+            
+            salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
+            if par['num_migrators'] > 0 and salvage_migrator not in self.rank[:par['num_survivors']]:
+                self.rank[par['num_survivors']-1] = salvage_migrator
 
         for name in self.var_dict.keys():
-            self.var_dict[name] = self.var_dict[name][self.rank,...]
+            self.var_dict[name][:par['num_survivors']] = self.var_dict[name][self.rank[:par['num_survivors']],...]
+
 
     def get_weights(self):
         return to_cpu({name:cp.mean(self.var_dict[name][:par['num_survivors'],...], axis=0) \
@@ -117,8 +111,8 @@ class EvoModel:
             self.con_dict['mutation_strength'] *= 0.875
 
     def speed_up_mutation(self):
-        self.con_dict['mutation_rate'] = min(1, self.con_dict['mutation_rate']*1.25)
-        self.con_dict['mutation_strength'] = min(0.5, self.con_dict['mutation_strength'] * 1.125)
+        self.con_dict['mutation_rate'] = min(0.7, self.con_dict['mutation_rate']*1.25)
+        self.con_dict['mutation_strength'] = min(0.45, self.con_dict['mutation_strength'] * 1.125)
 
     def breed_models_genetic(self):
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
@@ -156,8 +150,8 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            conv_model = tf.train.import_meta_graph('conv_model_with_latent.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
+            conv_model = tf.train.import_meta_graph('latent_all_img_batch16_filt16_loss150/conv_model_with_latent.meta', clear_devices=True)
+            conv_model.restore(sess, tf.train.latest_checkpoint('./latent_all_img_batch16_filt16_loss150/')) 
 
         threshold = [10000, 1000, 750, 500, 300, 150, -1]
         test_loss = [1000000]
@@ -191,7 +185,7 @@ def main(gpu_id = None):
                 stuck = 0
             else:
                 stuck += 1
-                if stuck > 10:
+                if stuck > 20:
                     evo_model.speed_up_mutation()
                     stuck = 0
 
@@ -199,14 +193,14 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {:.2f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
                     par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, np.array([*evo_loss[0:3],evo_loss[par['num_survivors']-1]]), time.time()-start))
-                losses.append(evo_loss)
+                if evo_loss[0] != 10000:
+                    losses.append(evo_loss[0])
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
                     if evo_loss[0] < test_loss[0]:
-
                         # Generate batch from testing set and check the output
                         input_data, conv_target, evo_target = stim.generate_test_batch()
                         feed_dict = {'x:0': input_data, 'y:0': conv_target}
@@ -219,7 +213,7 @@ def main(gpu_id = None):
 
                         evo_output = evo_model.output
                         test_loss = evo_model.get_losses(True)
-                        testing_losses.append(test_loss)
+                        testing_losses.append(test_loss[0])
 
                         plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
 
@@ -230,7 +224,7 @@ def main(gpu_id = None):
 
                 # Plot loss curve
                 if i > 0:
-                    plt.plot([l[0]for l in losses[1:]])
+                    plt.plot(losses[1:])
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
                     plt.close()
 
@@ -244,10 +238,10 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     cv2.putText(original1,'Conv',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
-    # Results from a testing sample
+    # Results from a testing sample 
     original2 = test_target[0].reshape(par['out_img_shape'])
     output2 = test_output[0].reshape(par['out_img_shape'])
-    original3 = test_target[1].reshape(par['out_img_shape'])
+    original3 = test_target[0].reshape(par['out_img_shape'])
     output3 = test_output[1].reshape(par['out_img_shape'])
     cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
     cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
@@ -258,15 +252,6 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
     vis = np.concatenate((vis1, vis2), axis=0)
     vis = np.concatenate((vis, vis3), axis=0)
     vis = copy.deepcopy(vis)
-    if par['normalize01']:
-        print("UN-NORMALIZE")
-        if np.max(vis) > 1 or np.min(vis) < 0:
-            print(np.max(vis))
-            print(np.min(vis))
-            print("Something is wrong")
-            quit()
-        vis *= 255
-        vis = np.int16(vis)
 
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
@@ -282,20 +267,22 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'testing loading up latent model for evo',
+            'a_note'            : 'latent to evo, all img',
             'input_dir'         : './bw_im/',
             'target_dir'        : './raw_im/',
             'print_iter'        : 1,
-            'save_iter'         : 100,
+            'save_iter'         : 5,
             'batch_train_size'  : 16,
-            'run_number'        : 13,
-            'num_conv1_filters' : 32,
-            'n_networks'        : 50,
+            'run_number'        : 14,
+            'num_conv1_filters' : 16,
+            'n_networks'        : 65,
             'survival_rate'     : 0.12,
-            'mutation_rate'     : 0.45,
-            'mutation_strength' : 0.1,
+            'mutation_rate'     : 0.6,
+            'mutation_strength' : 0.45,
+            'migration_rate'    : 0.1,
             'task'              : 'conv_task',
-            'simulation'        : True
+            'one_img'           : False,
+            'simulation'        : False
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')
