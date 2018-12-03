@@ -87,12 +87,16 @@ class EvoModel:
         else:
             return to_cpu(self.loss)
 
-    def slowdown_mutation(self):
-        self.con_dict['mutation_rate'] *= 0.75
-        self.con_dict['mutation_strength'] *= 0.875
+    def slowdown_mutation(self, reset=False):
+        if reset:
+            self.con_dict['mutation_rate'] = min(0.6, self.con_dict['mutation_rate'])
+            self.con_dict['mutation_strength'] = min(0.45, self.con_dict['mutation_strength'])
+        else:
+            self.con_dict['mutation_rate'] *= 0.75
+            self.con_dict['mutation_strength'] *= 0.875
 
     def speed_up_mutation(self):
-        self.con_dict['mutation_rate'] *= 1.25
+        self.con_dict['mutation_rate'] = min(1, self.con_dict['mutation_rate']*1.25)
         self.con_dict['mutation_strength'] *= 1.125
 
     def breed_models_genetic(self):
@@ -131,8 +135,8 @@ def main(gpu_id = None):
             # conv_model = tf.train.import_meta_graph('conv_model_for_evo.meta', clear_devices=True)
             # conv_model.restore(sess, tf.train.latest_checkpoint('./')) 
 
-        threshold = [10000, 5000, 1000, 750, 500, 300, 150, -1]
-        test_loss = [1000000000000]
+        threshold = [10000, 1000, 750, 500, 300, 150, -1]
+        test_loss = [1000000]
         stuck = 0
 
         # Train the model
@@ -159,18 +163,25 @@ def main(gpu_id = None):
                 threshold.pop(0)
                 evo_loss.slowdown_mutation()
 
+            if evo_loss[0] < test_loss[0]:
+                stuck = 0
+            else:
+                stuck += 1
+                if stuck > 10:
+                    evo_model.speed_up_mutation()
+                    stuck = 0
+
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Conv Loss: {:8.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, conv_loss, evo_loss[0:4], time.time()-start))
+                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {} | Conv Loss: {} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, evo_loss[0:4], time.time()-start))
                 losses.append(evo_loss)
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
                     if evo_loss[0] < test_loss[0]:
-                        stuck = 0
 
                         # Generate batch from testing set and check the output
                         input_data, conv_target, evo_target = stim.generate_test_batch()
@@ -192,12 +203,6 @@ def main(gpu_id = None):
 
                         pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                             open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
-
-                    else:
-                        test_loss[0] = evo_loss[0]
-                        stuck += 1
-                        if stuck > 20:
-                            evo_model.speed_up_mutation()
                     
                     # FIGURE OUT HOW TO SAVE EVO MODEL
 

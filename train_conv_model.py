@@ -148,9 +148,9 @@ def main(gpu_id = None):
             feed_dict = {x: input_data, y: target_data, z: color_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
 
-            if train_loss < 20000000000:
-                _, _, train_loss, train_loss2, model_output, model_output2 = \
-                sess.run([model.train_op, model.train_op2, model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
+            if train_loss < 250:
+                _, train_loss, train_loss2, model_output, model_output2 = \
+                sess.run([model.train_op2, model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
             else:
                 train_loss2 = 0
 

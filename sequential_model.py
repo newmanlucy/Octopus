@@ -123,12 +123,16 @@ class EvoModel:
         else:
             return to_cpu(self.loss)
 
-    def slowdown_mutation(self):
-        self.con_dict['mutation_rate'] *= 0.75
-        self.con_dict['mutation_strength'] *= 0.875
+    def slowdown_mutation(self, reset=False):
+        if reset:
+            self.con_dict['mutation_rate'] = min(0.6, self.con_dict['mutation_rate'])
+            self.con_dict['mutation_strength'] = min(0.45, self.con_dict['mutation_strength'])
+        else:
+            self.con_dict['mutation_rate'] *= 0.75
+            self.con_dict['mutation_strength'] *= 0.875
 
     def speed_up_mutation(self):
-        self.con_dict['mutation_rate'] *= 1.25
+        self.con_dict['mutation_rate'] = min(1, self.con_dict['mutation_rate']*1.25)
         self.con_dict['mutation_strength'] *= 1.125
 
     def breed_models_genetic(self):
@@ -195,14 +199,18 @@ def main(gpu_id = None):
                 evo_loss = evo_model.get_losses(True)
                 if evo_loss[0] < threshold[0]:
                     threshold.pop(0)
-                    evo_model.slowdown_mutation()
+                    if threshold[0] == 10000:
+                        evo_model.slowdown_mutation(reset=True)
+                    else:
+                        evo_model.slowdown_mutation()
                 
                 if evo_loss[0] < test_loss[0]:
                     stuck = 0
                 else:
                     stuck += 1
-                    if stuck > 20:
+                    if stuck > 10:
                         evo_model.speed_up_mutation()
+                        stuck = 0
             else:
                 check_stuck = False
                 evo_loss = [1000000]
@@ -212,7 +220,7 @@ def main(gpu_id = None):
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {} | Conv Loss: {:5.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
+                print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {:5.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
                     par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, evo_loss[0:4], time.time()-start))
                 losses.append(evo_loss[0])
 

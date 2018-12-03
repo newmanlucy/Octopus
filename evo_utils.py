@@ -87,7 +87,7 @@ def convolve(x, var_dict, filt_type):
 def mutate(var, num, rate, scale, epsilon=0.):
     """ Mutates a given variable by a given rate and scale,
         generating as many offspring as num """
-    mutation_mask = cp.random.random(size=[num, *var.shape]).astype(cp.float32)
+    mutation_mask = cp.random.choice([1,0], [num, *var.shape], p=[rate, 1-rate]).astype(cp.float32)
     mutation = cp.random.normal(loc=epsilon, scale=scale, size=[num, *var.shape])
     return cp.repeat(cp.expand_dims(var,axis=0),num,axis=0) + mutation*mutation_mask
 

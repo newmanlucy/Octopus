@@ -51,8 +51,8 @@ updates = {
     'num_conv1_filters' : 16,
     'n_networks'        : 50,
     'survival_rate'     : 0.12,
-    'mutation_rate'     : 0.7,
-    'mutation_strength' : 0.5,
+    'mutation_rate'     : 0.6,
+    'mutation_strength' : 0.4,
     'task'              : 'conv_task'
 }
 try_model(updates)
