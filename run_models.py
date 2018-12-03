@@ -39,7 +39,7 @@ def try_model(updates):
 
 
 updates = {
-    'a_note'            : 'one img with up down mutation rate',
+    'a_note'            : 'one img with migration',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
     'learning_rate'     : 0.001,
@@ -49,10 +49,10 @@ updates = {
     'print_iter'        : 1,
     'batch_train_size'  : 2,
     'num_conv1_filters' : 16,
-    'n_networks'        : 50,
-    'survival_rate'     : 0.12,
-    'mutation_rate'     : 0.6,
-    'mutation_strength' : 0.4,
+    'n_networks'        : 100,
+    'survival_rate'     : 0.1,
+    'mutation_rate'     : 0.3,
+    'mutation_strength' : 0.3,
     'task'              : 'conv_task'
 }
 try_model(updates)

@@ -109,11 +109,18 @@ class EvoModel:
         self.output = cp.reshape(self.output, (par['n_networks'],par['batch_train_size'],par['n_output']))
 
         # Rank the networks (returns [n_networks] indices)
-        self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
+        loss = self.loss.astype(cp.float64)
+        replace_parents = cp.zeros(par['num_survivors'])
+        for i in range(par['num_survivors']):
+            replace_parents[i] = cp.argmin(loss[cp.range(i,par['n_networks'],par['num_survivors'])])
         salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
+        
+        self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
+        self.rank[:par['num_survivors']] = replace_parents
+        
         if salvage_migrator not in self.rank[:par['num_survivors']]:
             self.rank[par['num_survivors']-1] = salvage_migrator
-            
+
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
@@ -137,7 +144,7 @@ class EvoModel:
 
     def speed_up_mutation(self):
         self.con_dict['mutation_rate'] = min(1, self.con_dict['mutation_rate']*1.25)
-        self.con_dict['mutation_strength'] *= 1.125
+        self.con_dict['mutation_strength'] = min(0.5, self.con_dict['mutation_strength'] * 1.125)
 
     def breed_models_genetic(self):
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
@@ -148,7 +155,7 @@ class EvoModel:
 
     def migration(self):
         for key in self.var_dict.keys():
-            shape = self.var_dict[key][-par['num_migrators']:,...]
+            shape = self.var_dict[key][-par['num_migrators']:,...].shape
             self.var_dict[key][-par['num_migrators']:,...] = cp.random.normal(size=shape).astype(cp.float32)
 
 def main(gpu_id = None):
@@ -231,7 +238,8 @@ def main(gpu_id = None):
                 # Print current status
                 print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {:5.3f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
                     par['run_number'], i, evo_model.con_dict['mutation_rate'], evo_model.con_dict['mutation_strength'], stuck, conv_loss, evo_loss[0:4], time.time()-start))
-                losses.append(evo_loss[0])
+                if evo_loss[0] != 1000000:
+                    losses.append(evo_loss[0])
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:

@@ -31,6 +31,7 @@ class EvoModel:
         
         self.make_constants()
         self.make_variables()
+        self.original = True
  
     def make_variables(self):
         self.var_dict = {}
@@ -82,6 +83,26 @@ class EvoModel:
         for name in self.var_dict.keys():
             self.var_dict[name] = self.var_dict[name][self.rank,...]
 
+    def judge_models(self):
+        self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
+        self.rank = cp.argsort(self.loss).astype(cp.int16)
+        if self.original:
+            self.original = False
+        else:
+            best_in_breed = cp.zeros(par['num_survivors']).astype(cp.int16)
+            for i in range(par['num_survivors']):
+                best_in_breed[i] = cp.argmin(self.loss[np.arange(i,par['n_networks'],par['num_survivors'])])
+            
+            self.rank[:par['num_survivors']] = best_in_breed
+            self.rank[:par['num_survivors']] = cp.argsort(self.loss[best_in_breed])
+
+            salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
+            if salvage_migrator not in self.rank[:par['num_survivors']]:
+                self.rank[par['num_survivors']-1] = salvage_migrator
+
+        for name in self.var_dict.keys():
+            self.var_dict[name] = self.var_dict[name][self.rank,...]
+
     def get_weights(self):
         return to_cpu({name:cp.mean(self.var_dict[name][:par['num_survivors'],...], axis=0) \
             for name in self.var_dict.keys()})
@@ -102,7 +123,7 @@ class EvoModel:
 
     def speed_up_mutation(self):
         self.con_dict['mutation_rate'] = min(1, self.con_dict['mutation_rate']*1.25)
-        self.con_dict['mutation_strength'] *= 1.125
+        self.con_dict['mutation_strength'] = min(0.5, self.con_dict['mutation_strength'] * 1.125)
 
     def breed_models_genetic(self):
 

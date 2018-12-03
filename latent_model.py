@@ -35,12 +35,9 @@ class EvoModel:
  
     def make_variables(self):
         self.var_dict = {}
-        for i in range(par['num_conv1_filters']):
-            self.var_dict['conv1_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,3)).astype(cp.float32)
         for i in range(3):
             self.var_dict['conv2_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters'])).astype(cp.float32)
 
-        self.var_dict['conv1_bias'] = cp.random.normal(size=(par['n_networks'],par['inp_img_shape'][0],par['inp_img_shape'][1],par['num_conv1_filters'])).astype(cp.float32)
         self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3)).astype(cp.float32)
         self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output'])).astype(cp.float32)
 
@@ -56,47 +53,40 @@ class EvoModel:
         self.con_dict[name] = to_gpu(val)
 
     def load_batch(self, input_data, target_data):
-        self.input_data = to_gpu(input_data)
+        self.input_data = cp.repeat(cp.expand_dims(to_gpu(input_data), axis=0), par['n_networks'], axis=0)
         self.target_data = to_gpu(target_data)
 
     def run_models(self):
-
-        x = cp.reshape(cp.repeat(cp.expand_dims(self.input_data,axis=0),par['n_networks'],axis=0), (par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
-        conv1 = relu(convolve(x, self.var_dict, 'conv1_filter') + cp.expand_dims(self.var_dict['conv1_bias'],axis=1))
-        conv2 = relu(convolve(conv1, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
-        self.output = cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output']))
-        # self.output = relu(cp.reshape(conv2, (par['n_networks'],par['batch_train_size'],par['n_output'])) + cp.expand_dims(self.var_dict['b_out'],axis=1))
-        # x:      (net, 32, 128, 128, 3)
-        # conv1:  (net, 32, 128, 128, 64)
-        # conv2:  (net, 32, 128, 128, 3)
-        # output: (net, 32, 49152)
- 
-    # def judge_models(self):
-    #     self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
-
-    #     # Rank the networks (returns [n_networks] indices)
-    #     self.rank = cp.argsort(self.loss.astype(cp.float64)).astype(cp.int16)
-    #     salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
-    #     if salvage_migrator not in self.rank[:par['num_survivors']]:
-    #         self.rank[par['num_survivors']-1] = salvage_migrator
-
-    #     for name in self.var_dict.keys():
-    #         self.var_dict[name] = self.var_dict[name][self.rank,...]
+        conv1 = relu(convolve(self.input_data, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
+        self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],*par['out_img_shape']))
 
     def judge_models(self):
-        self.loss = cp.mean(cp.square(cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0) - self.output),axis=(1,2))
+        img_len = par['img_size']
+        self.target_data = cp.reshape(self.target_data, (par['batch_train_size'],*par['out_img_shape']))
+        trimmed_img = cp.repeat(cp.expand_dims(self.target_data,axis=0),par['n_networks'],axis=0)[:,:,1:img_len-1,1:img_len-1,:]
+        
+        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,:,1:img_len-1,1:img_len-1,:]),axis=(1,2,3,4)).astype(cp.float64)
+        self.output = cp.reshape(self.output, (par['n_networks'],par['batch_train_size'],par['n_output']))
         self.rank = cp.argsort(self.loss).astype(cp.int16)
-        self.loss = cp.array([1,8,6, 3,7,2, 0,4,5, 9])
-        self.rank = cp.argsort(self.loss)
+
         if self.original:
             self.original = False
         else:
+            parent_idx = []
+            parent_loss = []
             for i in range(par['num_survivors']):
                 members = cp.arange(i,par['n_networks'],par['num_survivors'])
                 member_loss = self.loss[members]
                 index = cp.argsort(self.loss[members])
                 for j,k in enumerate(index):
+                    if j == 0:
+                        parent_idx.append(i + k*par['num_survivors'])
+                        parent_loss.append(self.loss[i + k*par['num_survivors']])
                     self.rank[i + k*par['num_survivors']] = members[j]
+
+            sort_parent = cp.argsort(cp.array(parent_loss))
+            for i,idx in enumerate(sort_parent):
+                self.rank[parent_idx[idx]] = i
 
             if par['num_migrators'] > 0:
                 salvage_migrator = par['n_networks'] - par['num_migrators'] + cp.argmin(self.loss[-par['num_migrators']:].astype(cp.float64)).astype(cp.int16)
@@ -131,7 +121,6 @@ class EvoModel:
         self.con_dict['mutation_strength'] = min(0.5, self.con_dict['mutation_strength'] * 1.125)
 
     def breed_models_genetic(self):
-
         for s, name in itertools.product(range(par['num_survivors']), self.var_dict.keys()):
             indices = cp.arange(s+par['num_survivors'], par['n_networks'], par['num_survivors'])
             self.var_dict[name][indices,...] = mutate(self.var_dict[name][s,...], indices.shape[0],\
@@ -184,7 +173,7 @@ def main(gpu_id = None):
             conv_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
 
             # "TRAIN" EVO MODEL
-            evo_model.load_batch(conv_output, evo_target)
+            evo_model.load_batch(encoded, evo_target)
             evo_model.run_models()
             evo_model.judge_models()
             evo_model.breed_models_genetic()
@@ -224,7 +213,7 @@ def main(gpu_id = None):
                         test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
 
                         # "TEST" EVO MODEL
-                        evo_model.load_batch(conv_output, evo_target)
+                        evo_model.load_batch(encoded, evo_target)
                         evo_model.run_models()
                         evo_model.judge_models()
 
@@ -244,57 +233,6 @@ def main(gpu_id = None):
                     plt.plot([l[0]for l in losses[1:]])
                     plt.savefig(par['save_dir']+'run_'+str(par['run_number'])+'_training_curve.png')
                     plt.close()
-
-
-            
-        # Test the model
-        # test_input, test_target = stim.generate_test_batch()
-        # feed_dict = {x: test_input, y: test_target}
-        # test_loss, test_output = sess.run([model.loss, model.output], feed_dict=feed_dict)
-        # print("FINAL TEST LOSS IS: ", test_loss)
-
-        # plt.plot(testing_losses)
-        # plt.savefig(par['save_dir']+'run_test_'+str(par['run_number'])+'_testing_curve.png')
-        # plt.close()
-
-        # for i in range(10):
-        #     idx = [i, i+10, i+20]
-        #     plot_testing(test_target[idx], test_output[idx], i)
-
-
-
-
-def plot_testing(test_target, test_output, i):
-
-    # Results from a testing sample
-    original1 = test_target[0].reshape(par['out_img_shape'])
-    output1 = test_output[0].reshape(par['out_img_shape'])
-    original2 = test_target[1].reshape(par['out_img_shape'])
-    output2 = test_output[1].reshape(par['out_img_shape'])
-    original3 = test_target[2].reshape(par['out_img_shape'])
-    output3 = test_output[2].reshape(par['out_img_shape'])
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(original1,'Testing',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-
-    vis1 = np.concatenate((original1, output1), axis=1)
-    vis2 = np.concatenate((original2, output2), axis=1)
-    vis3 = np.concatenate((original3, output3), axis=1)
-    vis = np.concatenate((vis1, vis2), axis=0)
-    vis = np.concatenate((vis, vis3), axis=0)
-    vis = copy.deepcopy(vis)
-    if par['normalize01']:
-        print("UN-NORMALIZE")
-        if np.max(vis) > 1 or np.min(vis) < 0:
-            print(np.max(vis))
-            print(np.min(vis))
-            print("Something is wrong")
-            quit()
-        vis *= 255
-        vis = np.int16(vis)
-
-    cv2.imwrite(par['save_dir']+'run_test_'+str(par['run_number'])+'_output_'+str(i)+'.png', vis)
 
 
 def plot_outputs(target_data, model_output, test_target, test_output, i):
@@ -351,9 +289,9 @@ if __name__ == "__main__":
             'save_iter'         : 100,
             'batch_train_size'  : 16,
             'run_number'        : 13,
-            'num_conv1_filters' : 16,
-            'n_networks'        : 100,
-            'survival_rate'     : 0.6,
+            'num_conv1_filters' : 32,
+            'n_networks'        : 50,
+            'survival_rate'     : 0.12,
             'mutation_rate'     : 0.45,
             'mutation_strength' : 0.1,
             'task'              : 'conv_task',

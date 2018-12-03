@@ -19,11 +19,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 class Model:
 
-    def __init__(self, input_data, target_data, color_data):
+    def __init__(self, input_data, target_data):
         # Load input and target data
         self.input_data = input_data
         self.target_data = target_data
-        self.color_data = color_data
 
         # Run model
         self.run_model()
@@ -50,19 +49,14 @@ class Model:
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv6 = tf.layers.conv2d(inputs=upsample3, filters=par['num_conv1_filters'], kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 
-        self.latent = conv6
+        self.latent = tf.multiply(conv6, 1, name='encoded')
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
         self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='o')
-
-        conv_testing = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        self.output_testing = tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']]))
  
     def optimize(self):
         # Calculae loss
         self.loss = tf.multiply(tf.losses.mean_squared_error(self.target_data, self.output), 1, name='l')
-        self.loss_test = tf.losses.mean_squared_error(self.color_data, self.output_testing)
         self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
-        self.train_op2 = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss_test)
 
 
 class EvoModel:
@@ -122,7 +116,6 @@ def main(gpu_id = None):
     # Placeholders for the tensorflow model
     x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']], name='x')
     y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='y')
-    z = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']], name='z')
 
     # Model stats
     losses = []
@@ -133,7 +126,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            model = Model(x,y,z)
+            model = Model(x,y)
         
         init = tf.global_variables_initializer()
         sess.run(init)
@@ -144,40 +137,34 @@ def main(gpu_id = None):
         for i in range(par['num_iterations']):
 
             # Generate training set
-            input_data, target_data, color_data = stim.generate_train_batch()
-            feed_dict = {x: input_data, y: target_data, z: color_data}
+            input_data, target_data, _ = stim.generate_train_batch()
+            feed_dict = {x: input_data, y: target_data}
             _, train_loss, model_output = sess.run([model.train_op, model.loss, model.output], feed_dict=feed_dict)
-
-            if train_loss < 250:
-                _, train_loss, train_loss2, model_output, model_output2 = \
-                sess.run([model.train_op2, model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
-            else:
-                train_loss2 = 0
 
             # Check current status
             if i % par['print_iter'] == 0:
 
                 # Print current status
-                print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
-                    par['run_number'], par['task'], i, train_loss, train_loss2, time.time()-start))
+                print('Model {:2} | Task: {:s} | Iter: {:6} | Loss: {:8.3f} | Run Time: {:5.3f}s'.format( \
+                    par['run_number'], par['task'], i, train_loss, time.time()-start))
                 losses.append(train_loss)
 
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
 
                     # Generate batch from testing set and check the output
-                    test_input, test_target, color_data = stim.generate_test_batch()
-                    feed_dict = {x: test_input, y: test_target, z: color_data}
-                    test_loss, test_loss2, test_output, test_output2 = sess.run([model.loss, model.loss_test, model.output, model.output_testing], feed_dict=feed_dict)
+                    test_input, test_target, _ = stim.generate_test_batch()
+                    feed_dict = {x: test_input, y: test_target}
+                    test_loss, test_output = sess.run([model.loss, model.output,], feed_dict=feed_dict)
                     testing_losses.append(test_loss)
 
-                    plot_outputs(test_target, test_output, color_data, test_output2, i)
+                    plot_outputs(target_data, model_output, test_target, test_output, i)
 
-                    # pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
-                        # open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
+                    pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                        open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                     
-                    # saved_path = saver.save(sess, './conv_model_testing')
-                    # print('model saved in {}'.format(saved_path))
+                    saved_path = saver.save(sess, './conv_model_with_latent')
+                    print('model saved in {}'.format(saved_path))
 
                 # Plot loss curve
                 if i > 0:
@@ -286,16 +273,17 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'testing conv model latent output training',
+            'a_note'            : 'conv_model with latent, batch16, filt 32',
             'input_dir'         : './bw_im/',
             'target_dir'        : './raw_im/',
-            'batch_train_size'  : 32,
+            'batch_train_size'  : 16,
             'learning_rate'     : 0.001,
             'normalize01'       : False,
-            'run_number'        : 7,
+            'num_conv1_filters' : 32,
+            'run_number'        : 11,
             "save_iter"         : 100,
             'task'              : 'conv_task',
-            'simulation'    : True
+            'simulation'        : True
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')
