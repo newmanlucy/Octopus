@@ -41,6 +41,9 @@ class EvoModel:
         self.var_dict['conv2_bias'] = cp.random.normal(size=(par['n_networks'],*par['inp_img_shape'],3)).astype(cp.float32)
         self.var_dict['b_out'] = cp.random.normal(size=(par['n_networks'],par['n_output'])).astype(cp.float32)
 
+    def update_variables(self, updates):
+        for key, val in updates.items():
+            self.var_dict[key] = to_gpu(val)
 
     def make_constants(self):
         constants = ['n_networks','mutation_rate','mutation_strength','cross_rate']
@@ -150,10 +153,12 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            conv_model = tf.train.import_meta_graph('latent_all_img_batch16_filt16_loss150/conv_model_with_latent.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint('./latent_all_img_batch16_filt16_loss150/')) 
+            folder = './latent_all_img_batch16_filt16_loss80/'
+            conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
+            conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
+            print('Loaded model from',folder)
 
-        threshold = [10000, 1000, 750, 500, 300, 150, -1]
+        threshold = [10000, 5000, 1000, 750, 500, 300, 150, -1]
         test_loss = [1000000]
         stuck = 0
 
@@ -171,13 +176,15 @@ def main(gpu_id = None):
             evo_model.run_models()
             evo_model.judge_models()
             evo_model.breed_models_genetic()
-            evo_model.migration()
+            if par['num_migrators'] > 0:
+                evo_model.migration()
 
             evo_loss = evo_model.get_losses(True)
             if evo_loss[0] < threshold[0]:
                 threshold.pop(0)
                 if threshold[0] == 10000:
                     evo_model.slowdown_mutation(reset=True)
+                    par['num_migrators'] = 0
                 else:
                     evo_model.slowdown_mutation()
 
@@ -201,6 +208,7 @@ def main(gpu_id = None):
                 # Save one training and output img from this iteration
                 if i % par['save_iter'] == 0:
                     if evo_loss[0] < test_loss[0]:
+                        print("SAVING",par['save_dir'])
                         # Generate batch from testing set and check the output
                         input_data, conv_target, evo_target = stim.generate_test_batch()
                         feed_dict = {'x:0': input_data, 'y:0': conv_target}
@@ -268,14 +276,12 @@ if __name__ == "__main__":
     try:
         updates = {
             'a_note'            : 'latent to evo, all img',
-            'input_dir'         : './bw_im/',
-            'target_dir'        : './raw_im/',
             'print_iter'        : 1,
             'save_iter'         : 5,
             'batch_train_size'  : 16,
-            'run_number'        : 14,
+            'run_number'        : 15,
             'num_conv1_filters' : 16,
-            'n_networks'        : 65,
+            'n_networks'        : 150,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,

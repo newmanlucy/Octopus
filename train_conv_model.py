@@ -231,11 +231,12 @@ if __name__ == "__main__":
             'batch_train_size'  : 1,
             'learning_rate'     : 0.001,
             'normalize01'       : False,
-            'num_conv1_filters' : 16,
+            'num_conv1_filters' : 8,
             'run_number'        : 11,
             "save_iter"         : 100,
             'task'              : 'conv_task',
-            'simulation'        : True
+            'one_img'           : False,
+            'simulation'        : False
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')
