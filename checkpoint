@@ -1,2 +1,2 @@
-model_checkpoint_path: "conv_model_for_evo"
-all_model_checkpoint_paths: "conv_model_for_evo"
+model_checkpoint_path: "conv_model_with_latent"
+all_model_checkpoint_paths: "conv_model_with_latent"
