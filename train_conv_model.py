@@ -16,6 +16,7 @@ from parameters import *
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 class Model:
 
@@ -225,13 +226,13 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'conv_model with latent, batch16, filt 32',
+            'a_note'            : 'conv_model with latent, batch1, filt 16',
             'input_dir'         : './bw_im/',
             'target_dir'        : './raw_im/',
             'batch_train_size'  : 1,
             'learning_rate'     : 0.001,
             'normalize01'       : False,
-            'num_conv1_filters' : 8,
+            'num_conv1_filters' : 16,
             'run_number'        : 11,
             "save_iter"         : 100,
             'task'              : 'conv_task',
