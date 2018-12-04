@@ -292,19 +292,19 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'latent to evo, big dataset, batch 1',
+            'a_note'            : 'latent to evo, omg image, batch 16',
             'print_iter'        : 1,
             'save_iter'         : 5,
             'batch_train_size'  : 1,
             'run_number'        : 0,
             'num_conv1_filters' : 16,
-            'n_networks'        : 150,
+            'n_networks'        : 70,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,
             'migration_rate'    : 0.1,
             'task'              : 'conv_task',
-            'one_img'           : False,
+            'one_img'           : True,
             'simulation'        : False
         }
         # Save updated parameters
