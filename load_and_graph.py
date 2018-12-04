@@ -28,7 +28,7 @@ def main(gpu_id = None):
     stim = Stimulus()
     evo_model = EvoModel()
 
-    saved_evo_model = pickle.load(open('./savedir/conv_task/run_17_model_stats.pkl','rb'))
+    saved_evo_model = pickle.load(open('./savedir/conv_task/run_18_model_stats.pkl','rb'))
     evo_model.update_variables(saved_evo_model['var_dict'])
     print('Loaded evo model')
 
@@ -44,7 +44,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './latent_all_img_batch16_filt16_loss80/'
+            folder = './latent_big_img_batch16_filt16_loss150/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded conv model from',folder)
@@ -131,7 +131,7 @@ if __name__ == "__main__":
             'batch_train_size'  : 16,
             'run_number'        : 0,
             'num_conv1_filters' : 16,
-            'n_networks'        : 65,
+            'n_networks'        : 100,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,

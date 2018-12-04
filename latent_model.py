@@ -168,7 +168,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './'
+            folder = './latent_big_img_batch16_filt16_loss150/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded model from',folder)
@@ -304,13 +304,13 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'latent to evo, bigger dataset',
+            'a_note'            : 'latent to evo, limited dataset',
             'print_iter'        : 1,
             'save_iter'         : 5,
             'batch_train_size'  : 16,
-            'run_number'        : 18,
+            'run_number'        : 19,
             'num_conv1_filters' : 16,
-            'n_networks'        : 100,
+            'n_networks'        : 75,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,
