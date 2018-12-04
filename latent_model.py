@@ -4,6 +4,8 @@ Contributions from Rick Stevens
 """
 
 import tensorflow as tf
+import io
+import json
 import cv2
 import pickle
 import time
@@ -15,6 +17,10 @@ import matplotlib.pyplot as plt
 # plt.switch_backend('agg')
 from parameters import *
 from evo_utils import *
+try:
+    to_unicode = unicode
+except NameError:
+    to_unicode = str
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -223,7 +229,7 @@ def main(gpu_id = None):
                         test_loss = evo_model.get_losses(True)
                         testing_losses.append(test_loss[0])
 
-                        plot_outputs(conv_target, conv_output, evo_target, np.array([evo_output[0][0],evo_output[1][0]]), i)
+                        plot_outputs(conv_target, conv_output, evo_target, evo_output, i)
 
                         pickle.dump({'var_dict':evo_model.var_dict, 'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                             open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
@@ -240,26 +246,37 @@ def main(gpu_id = None):
 def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
-    original1 = target_data[0].reshape(par['out_img_shape'])
-    output1 = model_output[0].reshape(par['out_img_shape'])
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(original1,'Conv',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+    outputs = []
+    for b in range(3):
+        batch = b
+        original1 = target_data[batch].reshape(par['out_img_shape'])
+        output1 = model_output[batch].reshape(par['out_img_shape'])
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(original1,'Conv',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
-    # Results from a testing sample 
-    original2 = test_target[0].reshape(par['out_img_shape'])
-    output2 = test_output[0].reshape(par['out_img_shape'])
-    original3 = test_target[0].reshape(par['out_img_shape'])
-    output3 = test_output[1].reshape(par['out_img_shape'])
-    cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
-    cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+        # Results from a testing sample
+        original2 = test_target[batch].reshape(par['out_img_shape'])
+        output2 = test_output[0][batch].reshape(par['out_img_shape'])
+        output3 = test_output[1][batch].reshape(par['out_img_shape'])
+        output4 = test_output[2][batch].reshape(par['out_img_shape'])
+        cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(output3,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(output4,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
-    vis1 = np.concatenate((original1, output1), axis=1)
-    vis2 = np.concatenate((original2, output2), axis=1)
-    vis3 = np.concatenate((original3, output3), axis=1)
-    vis = np.concatenate((vis1, vis2), axis=0)
-    vis = np.concatenate((vis, vis3), axis=0)
-    vis = copy.deepcopy(vis)
+        vis1 = np.concatenate((original1, output1), axis=1)
+        vis2 = np.concatenate((original2, output2), axis=1)
+        vis3 = np.concatenate((original2, output3), axis=1)
+        vis4 = np.concatenate((original2, output4), axis=1)
+        vis = np.concatenate((vis1, vis2), axis=0)
+        vis = np.concatenate((vis, vis3), axis=0)
+        vis = np.concatenate((vis, vis4), axis=0)
+        outputs.append(vis)
+
+    vis = np.concatenate((outputs[0],outputs[1]), axis=1)
+    for batch in range(2,len(outputs)):
+        vis = np.concatenate((vis,outputs[batch]), axis=1)
 
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
@@ -281,7 +298,7 @@ if __name__ == "__main__":
             'batch_train_size'  : 16,
             'run_number'        : 15,
             'num_conv1_filters' : 16,
-            'n_networks'        : 150,
+            'n_networks'        : 100,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,
@@ -290,7 +307,14 @@ if __name__ == "__main__":
             'one_img'           : False,
             'simulation'        : False
         }
+        # Save updated parameters
         update_parameters(updates)
+        with io.open(par['save_dir']+'run_'+str(par['run_number'])+'_params.json', 'w', encoding='utf8') as outfile:
+            str_ = json.dumps(updates,
+                              indent=4, sort_keys=False,
+                              separators=(',', ': '), ensure_ascii=False)
+            outfile.write(to_unicode(str_))
+
         print('Model number ' + str(par['run_number']) + ' running!')
         main(gpu_id)
         print('Model run concluded.  Run time: {:5.3f} s.\n\n'.format(time.time()-t0))
