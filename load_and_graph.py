@@ -50,38 +50,28 @@ def main(gpu_id = None):
             print('Loaded conv model from',folder)
 
             # Generate batch from testing set and check the output
+            # bw(16,128,128), bw(16,128,128,3), color(16,128,128,3)
             input_data, conv_target, evo_target = stim.generate_test_batch()
-            feed_dict = {'x:0': input_data, 'y:0': conv_target}
-            test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
+            for i in range(10):
+                start = time.time()
+                feed_dict = {'x:0': input_data, 'y:0': conv_target}
+                test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
 
-            # "TEST" EVO MODEL
-            evo_model.load_batch(encoded, evo_target)
-            evo_model.run_models()
-            evo_model.judge_models()
+                # "TEST" EVO MODEL
+                evo_model.load_batch(encoded, evo_target)
+                evo_model.run_models()
+                evo_model.judge_models()
 
-            evo_output = evo_model.output
-            test_loss = evo_model.get_losses(True)
-            testing_losses.append(test_loss[0])
+                evo_output = evo_model.output
+                test_loss = evo_model.get_losses(True)
+                testing_losses.append(test_loss[0])
+                end = time.time()
+                print('Time:', end-start)
 
-            plot_outputs(conv_target, conv_output, evo_target, evo_output, 0)
-
-            input_data, conv_target, evo_target = stim.generate_train_batch()
-            feed_dict = {'x:0': input_data, 'y:0': conv_target}
-            test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
-
-            # "TEST" EVO MODEL
-            evo_model.load_batch(encoded, evo_target)
-            evo_model.run_models()
-            evo_model.judge_models()
-
-            evo_output = evo_model.output
-            test_loss = evo_model.get_losses(True)
-            testing_losses.append(test_loss[0])
-
-            plot_outputs(conv_target, conv_output, evo_target, evo_output, 1)
+            plot_outputs(conv_target, conv_output, evo_target, evo_output)
 
 
-def plot_outputs(target_data, model_output, test_target, test_output,i):
+def plot_outputs(target_data, model_output, test_target, test_output):
 
     # Results from a training sample
     for j in range(4):
@@ -101,6 +91,8 @@ def plot_outputs(target_data, model_output, test_target, test_output,i):
             output4 = test_output[2][batch].reshape(par['out_img_shape'])
             cv2.putText(original2,'Evo',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
             cv2.putText(output2,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+            cv2.putText(output3,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+            cv2.putText(output4,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
 
             vis1 = np.concatenate((original1, output1), axis=1)
             vis2 = np.concatenate((original2, output2), axis=1)
@@ -115,7 +107,7 @@ def plot_outputs(target_data, model_output, test_target, test_output,i):
         for batch in range(2,len(outputs)):
             vis = np.concatenate((vis,outputs[batch]), axis=1)
         
-        cv2.imwrite('{}testing_run{}_{}_{}.png'.format(par['save_dir'],par['run_number'],j,i),vis)
+        cv2.imwrite('{}testing_run{}_{}.png'.format(par['save_dir'],par['run_number'],j),vis)
 
 
 if __name__ == "__main__":

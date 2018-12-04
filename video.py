@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # plt.switch_backend('agg')
 from parameters import *
 from evo_utils import *
-from latent_model import EvoModel
+from best_evo import EvoModel
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -32,8 +32,11 @@ def run_model(input_data, conv_target, evo_target, gpu_id = None):
     stim = Stimulus()
     evo_model = EvoModel()
 
-    saved_evo_model = pickle.load(open('./run_14_model_stats.pkl','rb'))
-    evo_model.update_variables(saved_evo_model['var_dict'])
+    saved_evo_model = pickle.load(open('./savedir/conv_task/run_14_model_stats.pkl','rb'))
+    best_weights = {}
+    for key, val in saved_evo_model['var_dict'].items():
+        best_weights[key] = val[0]
+    evo_model.update_variables(best_weights)
     print('Loaded evo model')
 
     # Model stats
@@ -48,7 +51,7 @@ def run_model(input_data, conv_target, evo_target, gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './'
+            folder = './latent_all_img_batch16_filt16_loss150/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded conv model from',folder)
@@ -64,7 +67,7 @@ def run_model(input_data, conv_target, evo_target, gpu_id = None):
             # "TEST" EVO MODEL
             evo_model.load_batch(encoded, evo_target)
             evo_model.run_models()
-            # evo_model.judge_models()
+            evo_model.judge_models()
 
             evo_output = evo_model.output
             test_loss = evo_model.get_losses(True)
@@ -73,7 +76,6 @@ def run_model(input_data, conv_target, evo_target, gpu_id = None):
                 # end = time.time()
                 # print(end-start)
             # display evo_output[0]
-
 
 def actually_run_model(input_data, conv_target, evo_target):
     # Run Model
@@ -126,18 +128,18 @@ def get_video_and_run():
         gray_3chan = np.array([[[x,x,x] for x in row] for row in gray])
 
         # (16,128,128), (16,128,128,3) bw, (16,128,128,3) color
-        cv2.imshow('frame', gray)
-        # gray = [gray] * 16
-        # gray_3chan = [gray_3chan] * 16
-        # frame = [frame] * 16
-        # evo_output = actually_run_model(gray, gray_3chan, frame)
+        # cv2.imshow('frame', gray)
+        gray = [gray] * 16
+        gray_3chan = [gray_3chan] * 16
+        frame = [frame] * 16
+        evo_output = actually_run_model(gray, gray_3chan, frame)
         # Display the resulting frame
-        # evo_output = cv2.resize(evo_output, (BIG, BIG))
-        # cv2.imshow('frame',evo_output)
+        evo_output = cv2.resize(evo_output, (BIG, BIG))
+        cv2.imshow('frame',evo_output)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        sleep(SLEEP)
+        # sleep(SLEEP)
 
     # When everything done, release the capture
     cap.release()
