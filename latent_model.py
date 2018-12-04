@@ -24,6 +24,7 @@ except NameError:
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 
 """
@@ -38,6 +39,7 @@ class EvoModel:
         self.make_constants()
         self.make_variables()
         self.original = True
+        self.iter = 0
  
     def make_variables(self):
         self.var_dict = {}
@@ -137,8 +139,8 @@ class EvoModel:
 def main(gpu_id = None):
 
     if gpu_id is not None:
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""
-        gpu_id = None
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+        # gpu_id = None
 
     # Reset Tensorflow graph
     tf.reset_default_graph()
@@ -146,6 +148,13 @@ def main(gpu_id = None):
     # Generate stimulus
     stim = Stimulus()
     evo_model = EvoModel()
+
+    # print('Loading evo model!')
+    # saved_evo_model = pickle.load(open('./savedir/conv_task/run_17_model_stats.pkl','rb'))
+    # best_weights = {}
+    # for key, val in saved_evo_model['var_dict'].items():
+    #     best_weights[key] = val
+    # evo_model.update_variables(best_weights)
 
     # Model stats
     losses = []
@@ -159,7 +168,7 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './latent_all_img_batch16_filt16_loss80/'
+            folder = './'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded model from',folder)
@@ -247,7 +256,7 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
     outputs = []
-    for b in range(1):
+    for b in range(4):
         batch = b
         original1 = target_data[batch].reshape(par['out_img_shape'])
         output1 = model_output[batch].reshape(par['out_img_shape'])
@@ -274,9 +283,12 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
         vis = np.concatenate((vis, vis4), axis=0)
         outputs.append(vis)
 
-    vis = np.concatenate((outputs[0],outputs[1]), axis=1)
-    for batch in range(2,len(outputs)):
-        vis = np.concatenate((vis,outputs[batch]), axis=1)
+    if len(outputs) == 1:
+        vis = outputs[0]
+    else:
+        vis = np.concatenate((outputs[0],outputs[1]), axis=1)
+        for batch in range(2,len(outputs)):
+            vis = np.concatenate((vis,outputs[batch]), axis=1)
 
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
@@ -292,19 +304,19 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'latent to evo, omg image, batch 16',
+            'a_note'            : 'latent to evo, bigger dataset',
             'print_iter'        : 1,
             'save_iter'         : 5,
-            'batch_train_size'  : 1,
-            'run_number'        : 0,
+            'batch_train_size'  : 16,
+            'run_number'        : 18,
             'num_conv1_filters' : 16,
-            'n_networks'        : 70,
+            'n_networks'        : 100,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,
             'migration_rate'    : 0.1,
             'task'              : 'conv_task',
-            'one_img'           : True,
+            'one_img'           : False,
             'simulation'        : False
         }
         # Save updated parameters

@@ -48,11 +48,27 @@ class Model:
         upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         conv5 = tf.layers.conv2d(inputs=upsample2, filters=128, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv6 = tf.layers.conv2d(inputs=upsample3, filters=par['num_conv1_filters'], kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        conv6 = tf.layers.conv2d(inputs=upsample3, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
 
         self.latent = tf.multiply(conv6, 1, name='encoded')
         logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
         self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='o')
+        print(conv1.shape)
+        print(maxpool1.shape)
+        print(conv2.shape)
+        print(maxpool2.shape)
+        print(conv3.shape)
+        print(maxpool3.shape)
+        print(latent.shape)
+        print(conv4.shape)
+        print(upsample2.shape)
+        print(conv5.sample)
+        print(upsample3.shape)
+        print(conv6.shape)
+        print(logits.shape)
+        print(self.output.shape)
+        quit()
+
  
     def optimize(self):
         # Calculae loss
@@ -233,7 +249,7 @@ if __name__ == "__main__":
             'learning_rate'     : 0.001,
             'normalize01'       : False,
             'num_conv1_filters' : 16,
-            'run_number'        : 11,
+            'run_number'        : 1000,
             "save_iter"         : 100,
             'task'              : 'conv_task',
             'one_img'           : False,

@@ -28,7 +28,7 @@ def main(gpu_id = None):
     stim = Stimulus()
     evo_model = EvoModel()
 
-    saved_evo_model = pickle.load(open('./savedir/conv_task/run_14_model_stats.pkl','rb'))
+    saved_evo_model = pickle.load(open('./savedir/conv_task/run_17_model_stats.pkl','rb'))
     evo_model.update_variables(saved_evo_model['var_dict'])
     print('Loaded evo model')
 
@@ -44,15 +44,15 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './latent_all_img_batch16_filt16_loss150/'
+            folder = './latent_all_img_batch16_filt16_loss80/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded conv model from',folder)
 
             # Generate batch from testing set and check the output
             # bw(16,128,128), bw(16,128,128,3), color(16,128,128,3)
-            input_data, conv_target, evo_target = stim.generate_test_batch()
-            for i in range(10):
+            for i in range(1):
+                input_data, conv_target, evo_target = stim.generate_test_batch()
                 start = time.time()
                 feed_dict = {'x:0': input_data, 'y:0': conv_target}
                 test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
@@ -68,10 +68,10 @@ def main(gpu_id = None):
                 end = time.time()
                 print('Time:', end-start)
 
-            plot_outputs(conv_target, conv_output, evo_target, evo_output)
+                plot_outputs(conv_target, conv_output, evo_target, evo_output, i)
 
 
-def plot_outputs(target_data, model_output, test_target, test_output):
+def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
     for j in range(4):
@@ -103,11 +103,14 @@ def plot_outputs(target_data, model_output, test_target, test_output):
             vis = np.concatenate((vis, vis4), axis=0)
             outputs.append(vis)
 
-        vis = np.concatenate((outputs[0],outputs[1]), axis=1)
-        for batch in range(2,len(outputs)):
-            vis = np.concatenate((vis,outputs[batch]), axis=1)
+        if len(outputs) == 1:
+            vis = outputs[0]
+        else:
+            vis = np.concatenate((outputs[0],outputs[1]), axis=1)
+            for batch in range(2,len(outputs)):
+                vis = np.concatenate((vis,outputs[batch]), axis=1)
         
-        cv2.imwrite('{}testing_run{}_{}.png'.format(par['save_dir'],par['run_number'],j),vis)
+        cv2.imwrite('{}testing_run{}_{}_{}.png'.format(par['save_dir'],par['run_number'],j,i),vis)
 
 
 if __name__ == "__main__":
@@ -122,12 +125,11 @@ if __name__ == "__main__":
     try:
         updates = {
             'a_note'            : 'latent to evo, all img',
-            'input_dir'         : './bw_im/',
-            'target_dir'        : './raw_im/',
             'print_iter'        : 1,
+            'loss_count'        : 16,
             'save_iter'         : 5,
             'batch_train_size'  : 16,
-            'run_number'        : 14,
+            'run_number'        : 0,
             'num_conv1_filters' : 16,
             'n_networks'        : 65,
             'survival_rate'     : 0.12,
