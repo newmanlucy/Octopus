@@ -40,35 +40,27 @@ def relu(x):
 
 def pad(x):
     shape = x.shape
-    idx = shape[2]-1 #127 for 128x128 img
+    img_size = shape[2]
     if len(shape) == 4:
-        temp = cp.zeros((par['batch_train_size'],130,130,shape[-1]))
-        temp[:,1:idx+2,1:idx+2,:] = x
+        temp = cp.zeros((par['batch_train_size'],img_size+2,img_size+2,shape[-1]))
+        temp[:,:img_size,:img_size,:] = x
     else:
-        temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,shape[-1]))
-        temp[:,:,1:idx+2,1:idx+2,:] = x
-
-        temp[:,:,0,0,:]           = x[:,:,0,0,:]
-        temp[:,:,0,idx+2,:]       = x[:,:,0,idx,:]
-        temp[:,:,idx+2,0,:]       = x[:,:,idx,0,:]
-        temp[:,:,idx+2,idx+2,:]   = x[:,:,idx,idx,:]
-        
-        temp[:,:,0,1:idx+2,:]     = x[:,:,0,:,:]
-        temp[:,:,idx+2,1:idx+2,:] = x[:,:,idx,:,:]
-        temp[:,:,1:idx+2,0,:]     = x[:,:,:,0,:]
-        temp[:,:,1:idx+2,idx+2,:] = x[:,:,:,idx,:]
+        temp = cp.zeros((par['n_networks'],par['batch_train_size'],img_size+2,img_size+2,shape[-1]))
+        temp[:,:,:img_size,:img_size,:] = x
     return temp
 
 def apply_filter(x, filt):
-    if len(x.shape) == 4:
-        temp = cp.zeros((par['batch_train_size'],128,128))
-        for i in range(128):
-            for j in range(128):
+    shape = x.shape
+    img_size = shape[2] - 2
+    if len(shape) == 4:
+        temp = cp.zeros((par['batch_train_size'],img_size,img_size))
+        for i in range(img_size):
+            for j in range(img_size):
                 temp[:,i,j] = cp.sum(x[:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=0),par['batch_train_size'],axis=0),axis=(1,2,3))
     else:
-        temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
-        for i in range(128):
-            for j in range(128):
+        temp = cp.zeros((par['n_networks'],par['batch_train_size'],img_size,img_size))
+        for i in range(img_size):
+            for j in range(img_size):
                 temp[:,:,i,j] = cp.sum(x[:,:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=1),par['batch_train_size'],axis=1),axis=(2,3,4))
 
     return temp
@@ -79,24 +71,21 @@ def convolve(x, var_dict, filt_type):
             conv = cp.zeros((par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
         else:
             conv = cp.zeros((par['batch_train_size'],*par['inp_img_shape'],3))
-        i = 0
-        x = pad(x)
-        for key in var_dict.keys():
-            if filt_type in key:
-                conv[:,:,:,i] = apply_filter(x, var_dict[key])
-                i += 1
     else:
         if filt_type == 'conv1_filter':
             conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
         else:
             conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
         
-        i = 0
-        x = pad(x)
-        for key in var_dict.keys():
-            if filt_type in key:
+    i = 0
+    x = pad(x)
+    for key in var_dict.keys():
+        if filt_type in key:
+            if len(x.shape) == 4:
+                conv[:,:,:,i] = apply_filter(x, var_dict[key])
+            else:
                 conv[:,:,:,:,i] = apply_filter(x, var_dict[key])
-                i += 1
+            i += 1
 
     return conv
 
