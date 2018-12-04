@@ -247,7 +247,7 @@ def plot_outputs(target_data, model_output, test_target, test_output, i):
 
     # Results from a training sample
     outputs = []
-    for b in range(3):
+    for b in range(1):
         batch = b
         original1 = target_data[batch].reshape(par['out_img_shape'])
         output1 = model_output[batch].reshape(par['out_img_shape'])
@@ -292,13 +292,13 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'latent to evo, all img',
+            'a_note'            : 'latent to evo, big dataset, batch 1',
             'print_iter'        : 1,
             'save_iter'         : 5,
-            'batch_train_size'  : 16,
-            'run_number'        : 15,
+            'batch_train_size'  : 1,
+            'run_number'        : 0,
             'num_conv1_filters' : 16,
-            'n_networks'        : 100,
+            'n_networks'        : 150,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,

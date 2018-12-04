@@ -94,8 +94,8 @@ def update_dependencies():
         par['save_dir'] = './savedir/bw1_to_color/'
 
     elif par['task'] == 'conv_task':
-        par['input_dir'] = './bw_im/'
-        par['target_dir'] = './raw_im/'
+        par['input_dir'] = './bw_im2/'
+        par['target_dir'] = './raw_im2/'
         par['inp_img_shape'] = (par['img_size'],par['img_size'])
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']
