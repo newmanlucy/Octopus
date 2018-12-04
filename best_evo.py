@@ -34,12 +34,12 @@ class EvoModel:
     def judge_models(self):
         img_len = par['img_size']
         self.target_data = cp.reshape(self.target_data, (par['batch_train_size'],*par['out_img_shape']))
-        trimmed_img = self.target_data[:,:,1:img_len-1,1:img_len-1,:]
-        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,:,1:img_len-1,1:img_len-1,:]),axis=(1,2,3)).astype(cp.float64)
+        trimmed_img = self.target_data[:,1:img_len-1,1:img_len-1,:]
+        self.loss = cp.mean(cp.square(trimmed_img - self.output[:,1:img_len-1,1:img_len-1,:])).astype(cp.float64)
         self.output = cp.reshape(self.output, (par['batch_train_size'],par['n_output']))
 
     def get_losses(self, ranked=True):
-        to_cpu(self.loss)
+        return to_cpu(self.loss)
 
 
 

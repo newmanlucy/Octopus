@@ -61,10 +61,10 @@ def pad(x):
 
 def apply_filter(x, filt):
     if len(x.shape) == 4:
-        temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
+        temp = cp.zeros((par['batch_train_size'],128,128))
         for i in range(128):
             for j in range(128):
-                temp[:,i,j] = cp.sum(x[:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=1),par['batch_train_size'],axis=1),axis=(2,3,4))
+                temp[:,i,j] = cp.sum(x[:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=0),par['batch_train_size'],axis=0),axis=(1,2,3))
     else:
         temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
         for i in range(128):
@@ -74,17 +74,29 @@ def apply_filter(x, filt):
     return temp
 
 def convolve(x, var_dict, filt_type):
-    if filt_type == 'conv1_filter':
-        conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
+    if len(x.shape) == 4:
+        if filt_type == 'conv1_filter':
+            conv = cp.zeros((par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
+        else:
+            conv = cp.zeros((par['batch_train_size'],*par['inp_img_shape'],3))
+        i = 0
+        x = pad(x)
+        for key in var_dict.keys():
+            if filt_type in key:
+                conv[:,:,:,i] = apply_filter(x, var_dict[key])
+                i += 1
     else:
-        conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
-    
-    i = 0
-    x = pad(x)
-    for key in var_dict.keys():
-        if filt_type in key:
-            conv[:,:,:,:,i] = apply_filter(x, var_dict[key])
-            i += 1
+        if filt_type == 'conv1_filter':
+            conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],par['num_conv1_filters']))
+        else:
+            conv = cp.zeros((par['n_networks'],par['batch_train_size'],*par['inp_img_shape'],3))
+        
+        i = 0
+        x = pad(x)
+        for key in var_dict.keys():
+            if filt_type in key:
+                conv[:,:,:,:,i] = apply_filter(x, var_dict[key])
+                i += 1
 
     return conv
 

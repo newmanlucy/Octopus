@@ -32,8 +32,11 @@ def run_model(gpu_id=None):#input_data, conv_target, evo_target, gpu_id = None):
     stim = Stimulus()
     evo_model = EvoModel()
 
-    saved_evo_model = pickle.load(open('./run_14_model_stats.pkl','rb'))
-    evo_model.update_variables(saved_evo_model['var_dict'])
+    saved_evo_model = pickle.load(open('./savedir/conv_task/run_14_model_stats.pkl','rb'))
+    best_weights = {}
+    for key, val in saved_evo_model['var_dict'].items():
+        best_weights[key] = val[0]
+    evo_model.update_variables(best_weights)
     print('Loaded evo model')
 
     # Model stats
@@ -48,7 +51,7 @@ def run_model(gpu_id=None):#input_data, conv_target, evo_target, gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './'
+            folder = './latent_all_img_batch16_filt16_loss150/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
             conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
             print('Loaded conv model from',folder)
@@ -64,15 +67,14 @@ def run_model(gpu_id=None):#input_data, conv_target, evo_target, gpu_id = None):
                 # "TEST" EVO MODEL
                 evo_model.load_batch(encoded, evo_target)
                 evo_model.run_models()
-                # evo_model.judge_models()
+                evo_model.judge_models()
 
                 evo_output = evo_model.output
                 test_loss = evo_model.get_losses(True)
-                testing_losses.append(test_loss[0])
+                testing_losses.append(test_loss)
                 end = time.time()
                 print(end-start)
             # display evo_output[0]
-
 
 def actually_run_model(input_data, conv_target, evo_target):
     # Run Model
