@@ -41,25 +41,35 @@ def relu(x):
 def pad(x):
     shape = x.shape
     idx = shape[2]-1 #127 for 128x128 img
-    temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,shape[-1]))
-    temp[:,:,1:idx+2,1:idx+2,:] = x
+    if len(shape) == 4:
+        temp = cp.zeros((par['batch_train_size'],130,130,shape[-1]))
+        temp[:,1:idx+2,1:idx+2,:] = x
+    else:
+        temp = cp.zeros((par['n_networks'],par['batch_train_size'],130,130,shape[-1]))
+        temp[:,:,1:idx+2,1:idx+2,:] = x
 
-    temp[:,:,0,0,:]         = x[:,:,0,0,:]
-    temp[:,:,0,idx+2,:]       = x[:,:,0,idx,:]
-    temp[:,:,idx+2,0,:]       = x[:,:,idx,0,:]
-    temp[:,:,idx+2,idx+2,:]     = x[:,:,idx,idx,:]
-    
-    temp[:,:,0,1:idx+2,:]     = x[:,:,0,:,:]
-    temp[:,:,idx+2,1:idx+2,:]   = x[:,:,idx,:,:]
-    temp[:,:,1:idx+2,0,:]     = x[:,:,:,0,:]
-    temp[:,:,1:idx+2,idx+2,:]   = x[:,:,:,idx,:]
+        temp[:,:,0,0,:]           = x[:,:,0,0,:]
+        temp[:,:,0,idx+2,:]       = x[:,:,0,idx,:]
+        temp[:,:,idx+2,0,:]       = x[:,:,idx,0,:]
+        temp[:,:,idx+2,idx+2,:]   = x[:,:,idx,idx,:]
+        
+        temp[:,:,0,1:idx+2,:]     = x[:,:,0,:,:]
+        temp[:,:,idx+2,1:idx+2,:] = x[:,:,idx,:,:]
+        temp[:,:,1:idx+2,0,:]     = x[:,:,:,0,:]
+        temp[:,:,1:idx+2,idx+2,:] = x[:,:,:,idx,:]
     return temp
 
 def apply_filter(x, filt):
-    temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
-    for i in range(128):
-        for j in range(128):
-            temp[:,:,i,j] = cp.sum(x[:,:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=1),par['batch_train_size'],axis=1),axis=(2,3,4))
+    if len(x.shape) == 4:
+        temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
+        for i in range(128):
+            for j in range(128):
+                temp[:,i,j] = cp.sum(x[:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=1),par['batch_train_size'],axis=1),axis=(2,3,4))
+    else:
+        temp = cp.zeros((par['n_networks'],par['batch_train_size'],128,128))
+        for i in range(128):
+            for j in range(128):
+                temp[:,:,i,j] = cp.sum(x[:,:,i:i+3,j:j+3,:] * cp.repeat(cp.expand_dims(filt,axis=1),par['batch_train_size'],axis=1),axis=(2,3,4))
 
     return temp
 
