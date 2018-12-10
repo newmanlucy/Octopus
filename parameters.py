@@ -11,46 +11,39 @@ par = {
     'save_dir'          : './savedir/',
     'input_dir'         : './bw_im2/',
     'target_dir'        : './raw_im2/',
-    'simulation'	    : False,
     'img_size'          : 128,
 
-    # Network shape
+    # Training parameters
+    'task'              : 'conv_task',
+    'simulation'        : False,
+    'learning_rate'     : 0.001,
+    'batch_train_size'  : 16,
+    'num_iterations'    : 30001,
+    'normalize01'       : False,
+    'print_iter'        : 10,
+    'save_iter'         : 200,
+    'one_img'           : False,
+    'run_number'        : 0,
+
+    # Feedforward network shape
     'n_enc'             : 125,
     'n_link'            : 100,
     'n_latent'          : 75,
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
+    
+    # Convolutional network shape
     'num_conv1_filters' : 16,
 
-    # Evolutionary
-    'n_networks'        : 100,
-    'survival_rate'     : 0.1,
-    'mutation_rate'     : 0.1,
-    'mutation_strength' : 0.20,
+    # Evolutionary network shape
+    'n_networks'        : 65,
+    'survival_rate'     : 0.12,
+    'mutation_rate'     : 0.6,
+    'mutation_strength' : 0.45,
     'migration_rate'    : 0.1,
-    'cross_rate'        : 0,
-    'use_crossing'      : False,
-    
-    # Training
-    'task'              : 'bw_to_bw_simple',
-    'learning_rate'     : 0.001,
-    'connection_prob'   : 1,
-    'dropout'           : 1,
-
-    # Variance
-    'input_mean'        : 0.0,
-    'noise_in_sd'       : 0.1,
-    'noise_rnn_sd'      : 0.5,
-
-    # Training setup
-    'normalize01'       : False,
-    'batch_train_size'  : 32,
-    'num_iterations'    : 30001,
-    'print_iter'        : 10,
-    'save_iter'         : 2000,
-    'one_img'           : False,
-    'simulation'        : False
+    'cross_rate'        : 0.0,
+    'use_crossing'      : False
 }
 
 """

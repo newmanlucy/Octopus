@@ -103,12 +103,13 @@ class Stimulus:
         
     def get_all_data(self):
         # Return all images in train and test data
-        file_name = self.files
         train_data = self.training_data
         testing_data = self.testing_data
         dummy_output = self.training_output1[:16]
+        train_name = self.files[:len(train_data)]
+        test_name = self.files[len(train_data):]
 
-        return file_name, train_data, testing_data, dummy_output
+        return train_name, test_name, train_data, testing_data, dummy_output
 
     def generate_train_batch(self):
 

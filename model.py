@@ -2,7 +2,6 @@
 Catherine (Chaihyun) Lee & Lucy Newman (2018)
 Contributions from Rick Stevens
 """
-
 import tensorflow as tf
 import cv2
 import pickle

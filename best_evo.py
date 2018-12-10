@@ -39,7 +39,10 @@ def convolve(x, var_dict, filt_type):
 
     return conv
 
-
+"""
+Evolutionary model adapted for real-time demo
+Assumes 1 network and batch size of 1
+"""
 class EvoModel:
 
     def __init__(self):

@@ -1,8 +1,7 @@
 from parameters import *
-import os, sys, time, pickle
-import itertools
+import sys
 
-import numpy as np
+# Use cupy when using gpu; otherwise use numpy
 if len(sys.argv) > 1:
     import cupy as cp
     cp.cuda.Device(sys.argv[1]).use()
@@ -33,7 +32,6 @@ def to_cpu(x):
 
 
 ### Network functions
-
 def relu(x):
     """ Performs relu on x """
     return cp.maximum(0., x, dtype=x.dtype)
@@ -70,7 +68,6 @@ def convolve(x, var_dict):
     return conv
 
 ### Optimization functions
-
 def cross(var1, var2, rate):
     """ Transmit some of var2 over to var1, based on the give rate """
     return cp.where(cp.random.choice([True,False], size=var1.shape, p=[1-rate, rate]), var1, var2)
