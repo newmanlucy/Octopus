@@ -21,7 +21,7 @@ par = {
     'n_dec'             : 125,
     'num_layers'        : 3,
     'new_model'         : False,
-    'num_conv1_filters' : 32,
+    'num_conv1_filters' : 16,
 
     # Evolutionary
     'n_networks'        : 100,
@@ -48,7 +48,9 @@ par = {
     'batch_train_size'  : 32,
     'num_iterations'    : 30001,
     'print_iter'        : 10,
-    'save_iter'         : 2000
+    'save_iter'         : 2000,
+    'one_img'           : False,
+    'simulation'        : False
 }
 
 """
@@ -94,13 +96,22 @@ def update_dependencies():
         par['save_dir'] = './savedir/bw1_to_color/'
 
     elif par['task'] == 'conv_task':
-        par['input_dir'] = './bw_im3/'
-        par['target_dir'] = './raw_im3/'
+        par['input_dir'] = './bw_im/'
+        par['target_dir'] = './raw_im/'
         par['inp_img_shape'] = (par['img_size'],par['img_size'])
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
         par['n_input'] = par['img_size']*par['img_size']
         par['n_output'] = par['n_input']*3
         par['save_dir'] = './savedir/conv_task/'
+
+    elif par['task'] == 'conv_task_tf':
+        par['input_dir'] = './latent_im/'
+        par['target_dir'] = './raw_im/'
+        par['inp_img_shape'] = (par['img_size'],par['img_size'])
+        par['out_img_shape'] = (par['img_size'],par['img_size'],3)
+        par['n_input'] = (par['img_size'],par['img_size'],16)
+        par['n_output'] = par['img_size']*par['img_size']*3
+        par['save_dir'] = './savedir/conv_task_tf/'
 
     if par['simulation']:
         par['save_dir'] = './simulation/'

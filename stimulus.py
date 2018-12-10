@@ -10,20 +10,24 @@ class Stimulus:
         # Get files from img_dir
         # files = ['clean.60.jpg','clean.58.jpg','clean.65.jpg','clean.62.jpg','clean.52.jpg']
         if par['one_img']:
-            files = ['clean.60.jpg']
+            self.files = ['clean.613.jpg', 'clean.299.jpg']
         else:
-            files = os.listdir(par['input_dir'])
-        files = list(np.array(files)[np.random.choice(np.arange(len(files)),size=2000)])
-        for f in files:
-            if 'clean' not in f:
-                files.remove(f)
+            self.files = os.listdir(par['input_dir'])
+            
+        self.files = list(np.array(self.files)[np.random.choice(np.arange(len(self.files)),size=2000)])
+        f = 0
+        while f < len(self.files):
+            if '.jpg' not in self.files[f] and '.png' not in self.files[f]:
+                self.files.remove(self.files[f])
+            else:
+                f += 1
 
         # Separate Training and Testing Data
-        idx = round(len(files)*0.8)
-        training_input_files  = [os.path.join(par['input_dir'], f) for f in files[:idx]]
-        training_target_files = [os.path.join(par['target_dir'], f) for f in files[:idx]]
-        testing_input_files   = [os.path.join(par['input_dir'], f) for f in files[idx:]]
-        testing_target_files  = [os.path.join(par['target_dir'], f) for f in files[idx:]]
+        idx = round(len(self.files)*0.8)
+        training_input_files  = [os.path.join(par['input_dir'], f) for f in self.files[:idx]]
+        training_target_files = [os.path.join(par['target_dir'], f) for f in self.files[:idx]]
+        testing_input_files   = [os.path.join(par['input_dir'], f) for f in self.files[idx:]]
+        testing_target_files  = [os.path.join(par['target_dir'], f) for f in self.files[idx:]]
 
         # Load up images from the files
         # 'bw_to_bw': going from three channel bw image to three channel bw image
@@ -57,27 +61,54 @@ class Stimulus:
             testing_target_imgs1  = [cv2.imread(f) for f in testing_input_files]
             testing_target_imgs2  = [cv2.imread(f) for f in testing_target_files]
 
+        elif par['task'] == 'conv_task_tf':
+            training_input_imgs   = [np.load(f) for f in training_input_files]
+            training_target_imgs1 = [cv2.imread(f[:-4]) for f in training_target_files]
+            
+            testing_input_imgs    = [np.load(f) for f in testing_input_files]
+            testing_target_imgs1  = [cv2.imread(f[:-4]) for f in testing_target_files]
 
         else:
             raise Exception('Task "{}" not yet implemented.'.format(par['task']))
 
-        # Resize the images to desired size
-        training_imgs_small      = [cv2.resize(img, par['inp_img_shape'][0:2]) for img in training_input_imgs]
-        training_imgs_small_out1 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in training_target_imgs1]
-        training_imgs_small_out2 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in training_target_imgs2]
-        testing_imgs_small       = [cv2.resize(img, par['inp_img_shape'][0:2]) for img in testing_input_imgs]
-        testing_imgs_small_out1  = [cv2.resize(img, par['out_img_shape'][0:2]) for img in testing_target_imgs1]
-        testing_imgs_small_out2  = [cv2.resize(img, par['out_img_shape'][0:2]) for img in testing_target_imgs2]
+        if par['task'] != 'conv_task_tf':
+            # Resize the images to desired size
+            training_imgs_small      = [cv2.resize(img, par['inp_img_shape'][0:2]) for img in training_input_imgs]
+            training_imgs_small_out1 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in training_target_imgs1]
+            training_imgs_small_out2 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in training_target_imgs2]
+            testing_imgs_small       = [cv2.resize(img, par['inp_img_shape'][0:2]) for img in testing_input_imgs]
+            testing_imgs_small_out1  = [cv2.resize(img, par['out_img_shape'][0:2]) for img in testing_target_imgs1]
+            testing_imgs_small_out2  = [cv2.resize(img, par['out_img_shape'][0:2]) for img in testing_target_imgs2]
 
+            
+            # Reshape the images to input dimensions
+            self.training_data    = np.array([np.array(img).reshape(par['n_input']) for img in training_imgs_small])
+            self.training_output1 = np.array([np.array(img).reshape(par['n_output']) for img in training_imgs_small_out1])
+            self.training_output2 = np.array([np.array(img).reshape(par['n_output']) for img in training_imgs_small_out2])
+            self.testing_data     = np.array([np.array(img).reshape(par['n_input']) for img in testing_imgs_small])
+            self.testing_output1  = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out1])
+            self.testing_output2  = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out2])
+
+        else:
+            self.training_data = np.array(training_input_imgs)
+            self.testing_data = np.array(testing_input_imgs)
+
+            training_imgs_small_out1 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in training_target_imgs1]
+            self.training_output1 = np.array([np.array(img).reshape(par['n_output']) for img in training_imgs_small_out1])
+            self.training_output2 = self.training_output1
+
+            testing_imgs_small_out1 = [cv2.resize(img, par['out_img_shape'][0:2]) for img in testing_target_imgs1]
+            self.testing_output1 = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out1])
+            self.testing_output2 = self.testing_output1
         
-        # Reshape the images to input dimensions
-        self.training_data    = np.array([np.array(img).reshape(par['n_input']) for img in training_imgs_small])
-        self.training_output1 = np.array([np.array(img).reshape(par['n_output']) for img in training_imgs_small_out1])
-        self.training_output2 = np.array([np.array(img).reshape(par['n_output']) for img in training_imgs_small_out2])
-        self.testing_data     = np.array([np.array(img).reshape(par['n_input']) for img in testing_imgs_small])
-        self.testing_output1  = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out1])
-        self.testing_output2  = np.array([np.array(img).reshape(par['n_output']) for img in testing_imgs_small_out2])
-        
+    def get_all_data(self):
+        # Return all images in train and test data
+        file_name = self.files
+        train_data = self.training_data
+        testing_data = self.testing_data
+        dummy_output = self.training_output1[:16]
+
+        return file_name, train_data, testing_data, dummy_output
 
     def generate_train_batch(self):
 
@@ -87,15 +118,15 @@ class Stimulus:
         target_data1 = self.training_output1[idx]
         target_data2 = self.training_output2[idx]
 
-        # Checking input image
-        vis = self.training_data[0].reshape(par['inp_img_shape'])
-        cv2.imwrite(par['save_dir']+'debug_input.png', vis)
+        # # Checking input image
+        # vis = self.training_data[0].reshape(par['inp_img_shape'])
+        # cv2.imwrite(par['save_dir']+'debug_input.png', vis)
 
-        # Checking target image
-        vis = self.training_output1[0].reshape(par['out_img_shape'])
-        cv2.imwrite(par['save_dir']+'debug_target1.png', vis)
-        vis = self.training_output2[0].reshape(par['out_img_shape'])
-        cv2.imwrite(par['save_dir']+'debug_target2.png', vis)
+        # # Checking target image
+        # vis = self.training_output1[0].reshape(par['out_img_shape'])
+        # cv2.imwrite(par['save_dir']+'debug_target1.png', vis)
+        # vis = self.training_output2[0].reshape(par['out_img_shape'])
+        # cv2.imwrite(par['save_dir']+'debug_target2.png', vis)
 
         return input_data, target_data1, target_data2
 

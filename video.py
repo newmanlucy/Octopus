@@ -24,7 +24,7 @@ def load_model():
     stim = None #Stimulus()
     evo_model = EvoModel()
 
-    saved_evo_model = pickle.load(open('./savedir/conv_task/run_14_model_stats.pkl','rb'))
+    saved_evo_model = pickle.load(open('./savedir/conv_task/run_21_model_stats.pkl','rb'))
     best_weights = {}
     for key, val in saved_evo_model['var_dict'].items():
         best_weights[key] = val[0]
@@ -36,7 +36,7 @@ def load_model():
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    folder = './latent_big_img_batch16_filt16_loss150/'
+    folder = './latent_all_img_batch16_filt16_loss150/'
     conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
     conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
     print('Loaded conv model from',folder)

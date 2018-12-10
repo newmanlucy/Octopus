@@ -9,6 +9,7 @@ import json
 import cv2
 import pickle
 import time
+from collections import OrderedDict 
 import numpy as np
 np.set_printoptions(precision=3)
 import copy
@@ -42,7 +43,7 @@ class EvoModel:
         self.iter = 0
  
     def make_variables(self):
-        self.var_dict = {}
+        self.var_dict = OrderedDict()
         for i in range(3):
             self.var_dict['conv2_filter{}'.format(i)] = cp.random.normal(size=(par['n_networks'],3,3,par['num_conv1_filters'])).astype(cp.float32)
 
@@ -68,7 +69,7 @@ class EvoModel:
         self.target_data = to_gpu(target_data)
 
     def run_models(self):
-        conv1 = relu(convolve(self.input_data, self.var_dict, 'conv2_filter') + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
+        conv1 = relu(convolve(self.input_data, self.var_dict) + cp.expand_dims(self.var_dict['conv2_bias'],axis=1))
         self.output = cp.reshape(conv1, (par['n_networks'],par['batch_train_size'],*par['out_img_shape']))
 
     def judge_models(self):
@@ -118,8 +119,10 @@ class EvoModel:
             self.con_dict['mutation_rate'] = min(0.6, self.con_dict['mutation_rate'])
             self.con_dict['mutation_strength'] = min(0.45, self.con_dict['mutation_strength'])
         else:
-            self.con_dict['mutation_rate'] *= 0.75
-            self.con_dict['mutation_strength'] *= 0.875
+            self.con_dict['mutation_rate'] = max(0.1, self.con_dict['mutation_rate'] * 0.7)
+            self.con_dict['mutation_strength'] = max(0.05, self.con_dict['mutation_strength'] * 0.8)
+            # self.con_dict['mutation_rate'] *= 0.7
+            # self.con_dict['mutation_strength'] *= 0.8
 
     def speed_up_mutation(self):
         self.con_dict['mutation_rate'] = min(0.7, self.con_dict['mutation_rate']*1.25)
@@ -136,6 +139,30 @@ class EvoModel:
             shape = self.var_dict[key][-par['num_migrators']:,...].shape
             self.var_dict[key][-par['num_migrators']:,...] = cp.random.normal(size=shape).astype(cp.float32)
 
+class ConvModel():
+    def __init__(self, input_data, target_data):
+        # Load input and target data
+        self.input_data = input_data
+        self.target_data = target_data
+
+        # Run model
+        self.run_model()
+
+        # Optimize
+        self.optimize()
+
+ 
+    def run_model(self):
+
+        self.latent = tf.multiply(self.input_data, 1, name='encoded')
+        logits = tf.layers.conv2d(inputs=conv6, filters=3, kernel_size=(3,3), padding='same', activation=None)
+        self.output = tf.multiply(tf.nn.relu(tf.reshape(logits, [par['batch_train_size'],par['n_output']])), 1, name='o')
+ 
+    def optimize(self):
+        # Calculae loss
+        self.loss = tf.multiply(tf.losses.mean_squared_error(self.target_data, self.output), 1, name='l')
+        self.train_op = tf.train.AdamOptimizer(par['learning_rate']).minimize(self.loss)
+
 def main(gpu_id = None):
 
     if gpu_id is not None:
@@ -150,10 +177,10 @@ def main(gpu_id = None):
     evo_model = EvoModel()
 
     # print('Loading evo model!')
-    # saved_evo_model = pickle.load(open('./savedir/conv_task/run_17_model_stats.pkl','rb'))
+    # saved_evo_model = pickle.load(open('./savedir/conv_task/run_14_model_stats.pkl','rb'))
     # best_weights = {}
     # for key, val in saved_evo_model['var_dict'].items():
-    #     best_weights[key] = val
+        # best_weights[key] = val
     # evo_model.update_variables(best_weights)
 
     # Model stats
@@ -168,10 +195,19 @@ def main(gpu_id = None):
 
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './latent_big_img_batch16_filt16_loss150/'
-            conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
-            print('Loaded model from',folder)
+            # g1 = tf.Graph()
+            # with g1.as_default():
+                folder = './latent_all_img_batch16_filt16_loss80/'
+                conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
+                conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
+                print('Loaded model from',folder)
+            
+            # g2 = tf.Graph()
+            # with g2.as_default():
+                # x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_input']])
+                # y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']])
+                
+
 
         threshold = [10000, 5000, 1000, 750, 500, 300, 150, -1]
         test_loss = [1000000]
@@ -208,7 +244,8 @@ def main(gpu_id = None):
             else:
                 stuck += 1
                 if stuck > 20:
-                    evo_model.speed_up_mutation()
+                    # evo_model.speed_up_mutation()
+                    evo_model.slowdown_mutation()
                     stuck = 0
 
             # Check current status
@@ -304,13 +341,13 @@ if __name__ == "__main__":
     t0 = time.time()
     try:
         updates = {
-            'a_note'            : 'latent to evo, limited dataset',
+            'a_note'            : 'latent to evo, raw_im1, lower mutation rate',
             'print_iter'        : 1,
             'save_iter'         : 5,
             'batch_train_size'  : 16,
-            'run_number'        : 19,
+            'run_number'        : 23,
             'num_conv1_filters' : 16,
-            'n_networks'        : 75,
+            'n_networks'        : 65,
             'survival_rate'     : 0.12,
             'mutation_rate'     : 0.6,
             'mutation_strength' : 0.45,
