@@ -8,13 +8,9 @@ class Stimulus:
     def __init__(self):
 
         # Get files from img_dir
-        # files = ['clean.60.jpg','clean.58.jpg','clean.65.jpg','clean.62.jpg','clean.52.jpg']
-        if par['one_img']:
-            self.files = ['clean.613.jpg', 'clean.299.jpg']
-        else:
-            self.files = os.listdir(par['input_dir'])
-            
+        self.files = os.listdir(par['input_dir'])
         self.files = list(np.array(self.files)[np.random.choice(np.arange(len(self.files)),size=2000)])
+        
         f = 0
         while f < len(self.files):
             if '.jpg' not in self.files[f] and '.png' not in self.files[f]:
@@ -45,10 +41,12 @@ class Stimulus:
             testing_target_imgs  = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_target_files]
         
         elif par['task'] == 'bw1_to_color':
-            training_input_imgs  = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
-            training_target_imgs = [cv2.imread(f) for f in training_target_files]
-            testing_input_imgs   = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
-            testing_target_imgs  = [cv2.imread(f) for f in testing_target_files]
+            training_input_imgs   = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in training_input_files]
+            training_target_imgs1 = [cv2.imread(f) for f in training_target_files]
+            training_target_imgs2 = training_target_imgs1
+            testing_input_imgs    = [cv2.cvtColor(cv2.imread(f),cv2.COLOR_BGR2GRAY) for f in testing_input_files]
+            testing_target_imgs1  = [cv2.imread(f) for f in testing_target_files]
+            testing_target_imgs2  = testing_target_imgs1
 
         elif par['task'] == 'conv_task':
             # bw1 input for conv model / bw3 target for conv model

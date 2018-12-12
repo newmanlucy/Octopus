@@ -4,8 +4,9 @@ import time
 import numpy as np
 from stimulus import Stimulus
 from parameters import *
+from model_util import *
 from evo_utils import *
-from latent_model import EvoModel
+from evo_model import EvoModel
 
 # Ignore tensorflow warning
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
@@ -40,26 +41,37 @@ def main(gpu_id = None):
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
             # Load trained convolutional autoencoder
-            folder = './latent_all_img_batch16_filt16_loss80/'
-            conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
-            print('Loaded conv model from',folder)
+            if par['task'] == 'conv_task':
+                folder = './latent_all_img_batch16_filt16_loss80/'
+                conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
+                conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
+                print('Loaded conv model from',folder)
 
-            # Generate batch and save output images
-            for i in range(4):
-                input_data, conv_target, evo_target = stim.generate_train_batch()
+                # Generate batch and save output images
+                for i in range(4):
+                    input_data, conv_target, evo_target = stim.generate_train_batch()
 
-                # Run input through convolutional model
-                feed_dict = {'x:0': input_data, 'y:0': conv_target}
-                test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
+                    # Run input through convolutional model
+                    feed_dict = {'x:0': input_data, 'y:0': conv_target}
+                    test_loss, conv_output, encoded = sess.run(['l:0', 'o:0','encoded:0'], feed_dict=feed_dict)
 
-                # Run latent output through evolutionary model
-                evo_model.load_batch(encoded, evo_target)
-                evo_model.run_models()
-                evo_model.judge_models()
+                    # Run latent output through evolutionary model
+                    evo_model.load_batch(encoded, evo_target)
+                    evo_model.run_models()
+                    evo_model.judge_models()
 
-                # Save output from both models
-                plot_conv_evo_outputs(conv_target, conv_output, evo_target, evo_model.output, i)
+                    # Save output from both models
+                    plot_conv_evo_outputs(conv_target, conv_output, evo_target, evo_model.output, i)
+            else:
+                folder = './'
+                conv_top = tf.train.import_meta_graph(folder + 'conv_model_top.meta', clear_devices=True)
+                conv_top.restore(sess, tf.train.latest_checkpoint(folder)) 
+                
+                for i in range(4):
+                    test_input, test_target, _ = stim.generate_test_batch()
+                    feed_dict = {'input:0': test_input, 'target:0': test_target}
+                    test_loss, test_output = sess.run(['l:0', 'output:0'], feed_dict=feed_dict)
+                    plot_conv_all(test_target, test_output, i)
 
 
 if __name__ == "__main__":
@@ -74,19 +86,8 @@ if __name__ == "__main__":
     try:
         updates = {
             'a_note'            : 'latent to evo, all img',
-            'print_iter'        : 1,
-            'save_iter'         : 5,
-            'batch_train_size'  : 16,
             'run_number'        : 0,
-            'num_conv1_filters' : 16,
-            'n_networks'        : 65,
-            'survival_rate'     : 0.12,
-            'mutation_rate'     : 0.6,
-            'mutation_strength' : 0.45,
-            'migration_rate'    : 0.1,
-            'task'              : 'conv_task',
-            'one_img'           : False,
-            'simulation'        : False
+            'task'              : 'conv_task_tf'
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')

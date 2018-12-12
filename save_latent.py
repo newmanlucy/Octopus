@@ -39,9 +39,9 @@ def main(gpu_id = None):
         # Load trained convolutional autoencoder
         device = '/cpu:0' if gpu_id is None else '/gpu:0'
         with tf.device(device):
-            folder = './latent_all_img_batch16_filt16_loss80/'
+            folder = './upsample2/'
             conv_model = tf.train.import_meta_graph(folder + 'conv_model_with_latent.meta', clear_devices=True)
-            conv_model.restore(sess, tf.train.latest_checkpoint(folder)) 
+            conv_model.restore(sess, tf.train.latest_checkpoint(folder))
             print('Loaded model from',folder)
 
         # Get all images from dataset
@@ -70,7 +70,7 @@ def save_latent(filename, data, dummy_output, sess):
         for n in range(len(encoded)):
             name = filename[n]
             output = encoded[n]
-            np.save(par['new_dir']+name, output)
+            np.save('./inner_latent2/'+name, output)
 
         if len(data) == b:
             break

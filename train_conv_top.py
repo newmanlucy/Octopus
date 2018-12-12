@@ -45,8 +45,10 @@ class ConvModelTop():
  
     def run_model(self):
         # Run model
-        conv = tf.layers.conv2d(inputs=self.input_data, filters=3, kernel_size=(3,3), padding='same', activation=None)
-        self.output = tf.nn.relu(tf.reshape(conv, [par['batch_train_size'],par['n_output']]))
+        conv = tf.layers.conv2d(inputs=self.input_data, filters=32, kernel_size=(3,3), padding='same', activation=tf.nn.relu)     # (64,64,128)
+        upsample = tf.image.resize_images(conv, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)             # (128,128,128)
+        output = tf.layers.conv2d(inputs=upsample, filters=3, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        self.output = tf.multiply(tf.nn.relu(tf.reshape(output, [par['batch_train_size'],par['n_output']])),1,name='output')     # (128,128,16)
  
     def optimize(self):
         # Calculate loss and optimize
@@ -63,8 +65,8 @@ def main(gpu_id = None):
     tf.reset_default_graph()
 
     # Placeholders for the tensorflow model
-    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],*par['n_input']])
-    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']])
+    x = tf.placeholder(tf.float32, shape=[par['batch_train_size'],*par['n_input']],name='input')
+    y = tf.placeholder(tf.float32, shape=[par['batch_train_size'],par['n_output']],name='target')
 
     # Generate stimulus
     stim = Stimulus()
@@ -84,6 +86,7 @@ def main(gpu_id = None):
         sess.run(init)
         saver = tf.train.Saver()
 
+        prev_loss = 1000000
         start = time.time()
         for i in range(par['num_iterations']):
 
@@ -109,7 +112,9 @@ def main(gpu_id = None):
                     testing_losses.append(test_loss)
 
                     # Plot model outputs
-                    plot_conv_outputs(target_data, model_output, test_target, test_output, i)
+                    if test_loss < prev_loss:
+                        prev_loss = test_loss
+                        plot_conv_outputs(target_data, model_output, test_target, test_output, i)
 
                     # Save training stats and model
                     pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
@@ -141,11 +146,9 @@ if __name__ == "__main__":
     try:
         # Set run parameters
         updates = {
-            'note'              : 'training conv top on dir2',
-            'input_dir'         : './latent_im2/',
-            'target_dir'        : './raw_im2/',
+            'note'              : 'training conv top on dir using upsample2',
             'task'              : 'conv_task_tf',
-            'run_number'        : 1
+            'run_number'        : 4
         }
 
         # Save updated parameters

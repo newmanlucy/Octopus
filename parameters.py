@@ -16,12 +16,12 @@ par = {
     # Training parameters
     'task'              : 'conv_task',
     'simulation'        : False,
-    'learning_rate'     : 0.001,
+    'learning_rate'     : 0.0005, #default = 0.001
     'batch_train_size'  : 16,
     'num_iterations'    : 30001,
     'normalize01'       : False,
     'print_iter'        : 10,
-    'save_iter'         : 200,
+    'save_iter'         : 50,
     'one_img'           : False,
     'run_number'        : 0,
 
@@ -98,12 +98,13 @@ def update_dependencies():
         par['save_dir'] = './savedir/conv_task/'
 
     elif par['task'] == 'conv_task_tf':
-        par['input_dir'] = './latent_im/'
+        par['input_dir'] = './inner_latent2/'
         par['target_dir'] = './raw_im/'
         par['inp_img_shape'] = (par['img_size'],par['img_size'])
         par['out_img_shape'] = (par['img_size'],par['img_size'],3)
-        par['n_input'] = (par['img_size'],par['img_size'],16)
-        par['n_output'] = par['img_size']*par['img_size']*3
+        # par['n_input'] = (par['img_size'],par['img_size'],128)
+        par['n_input'] = (64,64,64)
+        par['n_output'] = (par['img_size']*par['img_size']*3)
         par['save_dir'] = './savedir/conv_task_tf/'
 
     if par['simulation']:

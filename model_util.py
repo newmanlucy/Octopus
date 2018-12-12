@@ -34,8 +34,30 @@ def plot_conv_outputs(target_data, model_output, test_target, test_output, i):
 
     cv2.imwrite(par['save_dir']+'run_'+str(par['run_number'])+'_test_'+str(i)+'.png', vis)
 
+# Save convolutional model output images
+def plot_conv_all(test_target, test_output, i):
+
+    # Results from testing batch
+    label1  = test_target[0].reshape(par['out_img_shape'])
+    output1 = test_output[0].reshape(par['out_img_shape'])
+    label2  = test_target[1].reshape(par['out_img_shape'])
+    output2 = test_output[1].reshape(par['out_img_shape'])
+    label3  = test_target[2].reshape(par['out_img_shape'])
+    output3 = test_output[2].reshape(par['out_img_shape'])
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(label1,'Test',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+    cv2.putText(output1,'Output',(5,20), font, 0.5,(255,255,255), 2, cv2.LINE_AA)
+
+    vis1 = np.concatenate((label1, output1), axis=1)
+    vis2 = np.concatenate((label2, output2), axis=1)
+    vis3 = np.concatenate((label3, output3), axis=1)
+    vis = np.concatenate((vis1, vis2), axis=0)
+    vis = np.concatenate((vis, vis3), axis=0)
+
+    cv2.imwrite('{}testing_run{}_{}.png'.format(par['save_dir'],par['run_number'],i),vis)
+
 # Print current evolutionary model statistics
-def print_conv_stats(i, mutation_rate, mutation_strength, stuck, conv_loss, evo_loss, time):
+def print_evo_stats(i, mutation_rate, mutation_strength, stuck, conv_loss, evo_loss, time):
     print('Model {:1} | Iter: {:4} | Mut Rate: {:.2f} | Mut Strength: {:.2f} | Stuck: {:2} | Conv Loss: {:.2f} | Evo Loss: {} | Run Time: {:5.3f}s'.format( \
           par['run_number'], i, mutation_rate, mutation_strength, stuck, conv_loss, evo_loss, time))
 
