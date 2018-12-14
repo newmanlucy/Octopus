@@ -51,8 +51,8 @@ class Model:
         maxpool3 = tf.layers.max_pooling2d(conv3, pool_size=(2,2), strides=(2,2), padding='same')
 
         # Decoding
-        bottleneck = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-        conv4 = tf.layers.conv2d(inputs=bottleneck, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
+        btt = tf.image.resize_images(maxpool3, size=(32,32), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        conv4 = tf.layers.conv2d(inputs=btt, filters=64, kernel_size=(3,3), padding='same', activation=tf.nn.relu)
         upsample2 = tf.image.resize_images(conv4, size=(64,64), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)               # (64,64,64)
         conv5 = tf.layers.conv2d(inputs=upsample2, filters=32, kernel_size=(3,3), padding='same', activation=tf.nn.relu)     # (64,64,128)
         upsample3 = tf.image.resize_images(conv5, size=(128,128), method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)             # (128,128,128)
@@ -86,6 +86,7 @@ def main(gpu_id = None):
     # Model stats
     losses = []
     testing_losses = []
+    save_iter = []
 
     config = tf.ConfigProto()
     with tf.Session(config=config) as sess:
@@ -114,6 +115,7 @@ def main(gpu_id = None):
                 # Print current status
                 print_conv_stats(i, train_loss, time.time()-start)
                 losses.append(train_loss)
+                save_iter.append(i)
 
                 # Test and save model
                 if i % par['save_iter'] == 0:
@@ -130,7 +132,7 @@ def main(gpu_id = None):
                         plot_conv_outputs(target_data, model_output, test_target, test_output, i)
 
                         # Save training stats and model
-                        pickle.dump({'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
+                        pickle.dump({'iter':save_iter,'losses': losses, 'test_loss': testing_losses, 'last_iter': i}, \
                             open(par['save_dir']+'run_'+str(par['run_number'])+'_model_stats.pkl', 'wb'))
                         
                         saved_path = saver.save(sess, './upsample2/conv_model_with_latent')
@@ -156,7 +158,7 @@ if __name__ == "__main__":
         updates = {
             'a_note'            : 'simpler conv model on colorization',
             'task'              : 'bw1_to_color',
-            'run_number'        : 0
+            'run_number'        : 1001
         }
         update_parameters(updates)
         print('Model number ' + str(par['run_number']) + ' running!')
