@@ -159,7 +159,48 @@ def infer(image_name):
     cv2.destroyAllWindows()
 
 
+def rick_and_ian(image_name):
+    cap = cv2.VideoCapture(0)
+    updates = {
+        'one_img'           : False,
+        'batch_train_size'  : 16,
+        'num_conv1_filters' : 16,
+        'task'              : 'conv_task'
+    }
+    update_parameters(updates)
+    stim, evo_model, sess = load_model()
+
+    # Capture frame-by-frame
+    gray = cv2.imread(image_name, 0)
+    frame = cv2.imread(image_name)
+    # Our operations on the frame come here
+    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    gray_3chan = np.array([[[x,x,x] for x in row] for row in gray])
+
+    # (16,128,128), (16,128,128,3) bw, (16,128,128,3) color
+    cv2.imshow('frame', gray)
+    grey = gray.reshape(SMALL * SMALL)
+    gray = [grey] * NUM
+
+    grey_3chan = gray_3chan.reshape(SMALL * SMALL * 3)
+    gray_3chan = [grey_3chan] * NUM
+
+    # freme = frame.reshape(SMALL * SMALL * 3)
+    # frame = [freme] * NUM
+
+    evo_output = actually_run_model(stim, evo_model, sess, gray, gray_3chan, frame).astype(np.uint8)
+    # Display the resulting frame
+    cv2.imwrite( image_name+'.out.1.1.jpg',evo_output)
+    # break
+
+        # sleep(SLEEP)
+
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()
+
 if __name__ == '__main__':
     # actually_run_model(None,None,None)
     # get_video_and_run()
-    infer("clean.1.jpg")
+    rick_and_ian("Rick Stevens.png")
